@@ -13,7 +13,7 @@ import MessageBubble from "../components/MessageBubble";
 import type { Message } from "../utils/types";
 
 // TODO: work out how to input messages and display them
-const ChatScreen = () => {
+const ChatbotScreen = () => {
   const [text, setText] = React.useState("");
   const [messages, setMessages] = useState<Message[]>(messageList);
 
@@ -29,7 +29,7 @@ const ChatScreen = () => {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
         >
           <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled">
             {messages.map((item, index) => (
@@ -43,12 +43,14 @@ const ChatScreen = () => {
   );
 };
 
-export default ChatScreen;
+export default ChatbotScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
     paddingHorizontal: 20,
+    marginTop: 50,
+    marginBottom: 20,
   },
 });

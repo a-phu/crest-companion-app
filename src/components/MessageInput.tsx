@@ -16,7 +16,7 @@ function MessageInputBar({ onFocusScroll }: Props) {
         onChangeText={setText}
         value={text}
         placeholder={"Ask anything"}
-        autoFocus={true}
+        // autoFocus={true}
         underlineColorAndroid={"transparent"}
         onFocus={onFocusScroll}
       />

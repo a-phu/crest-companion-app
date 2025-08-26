@@ -1,11 +1,41 @@
 import React from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { SafeAreaView, Text, Button, StyleSheet } from "react-native";
+import ChatbotScreen from "./ChatbotScreen";
+import InsightsScreen from "./InsightsScreen";
+import ActionsScreen from "./ActionsScreen";
+import {
+  TabsProvider,
+  Tabs,
+  TabScreen,
+  useTabIndex,
+  useTabNavigation,
+} from "react-native-paper-tabs";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const HomeScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text>Home Screen</Text>
-    </View>
+    <SafeAreaProvider>
+      <TabsProvider
+        defaultIndex={0}
+        // onChangeIndex={handleChangeIndex} optional
+      >
+        <Tabs
+          showTextLabel={false}
+          showLeadingSpace={true}
+          style={styles.container}
+        >
+          <TabScreen label="Chat">
+            <ChatbotScreen />
+          </TabScreen>
+          <TabScreen label="Insights">
+            <InsightsScreen />
+          </TabScreen>
+          <TabScreen label="Actions">
+            <ActionsScreen />
+          </TabScreen>
+        </Tabs>
+      </TabsProvider>
+    </SafeAreaProvider>
   );
 };
 
