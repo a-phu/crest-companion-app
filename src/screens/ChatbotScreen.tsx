@@ -8,9 +8,10 @@ import {
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 
 import { messageList } from "../store/MessageStore";
-import MessageInputBar from "../components/MessageInput";
-import MessageBubble from "../components/MessageBubble";
+import ChatInput from "../components/ChatInput";
+import ChatBubble from "../components/ChatBubble";
 import type { Message } from "../utils/types";
+import { Appbar } from "react-native-paper";
 
 // TODO: work out how to input messages and display them
 const ChatbotScreen = () => {
@@ -24,19 +25,23 @@ const ChatbotScreen = () => {
   };
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ backgroundColor: "#ffffff" }}>
       <SafeAreaView style={styles.container}>
+        <Appbar>
+          {/* <Appbar.Action icon="menu" /> */}
+          <Appbar.Content title="Performance Assistant" style={styles.title} />
+        </Appbar>
         <KeyboardAvoidingView
-          style={{ flex: 1 }}
+          style={styles.chatContainer}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
         >
           <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled">
-            {/* {messages.map((item, index) => (
-              <MessageBubble key={item.id} msg={item} />
-            ))} */}
+            {messages.map((item, index) => (
+              <ChatBubble key={item.id} msg={item} />
+            ))}
           </ScrollView>
-          <MessageInputBar onFocusScroll={scrollToBottom} />
+          <ChatInput onFocusScroll={scrollToBottom} />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -49,8 +54,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+
     marginTop: 50,
     marginBottom: 20,
   },
+  title: {
+    flexDirection: "row",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  chatContainer: { flex: 1, paddingHorizontal: 10 },
 });

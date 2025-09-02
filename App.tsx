@@ -1,7 +1,8 @@
 import { StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, ThemeProvider } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import "react-native-get-random-values";
+import CrestTabs from "./src/screens/CrestTabs";
 import HomeScreen from "./src/screens/HomeScreen";
 
 // TODO: work out nav flow & data flow for app
@@ -17,8 +18,21 @@ export default function App() {
           component={HomeScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="CrestTabs"
+          component={CrestTabs}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
+
+    // <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    //   <Stack>
+    //     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    //     <Stack.Screen name="+not-found" />
+    //   </Stack>
+    //   <StatusBar style="auto" />
+    // </ThemeProvider>
   );
 }
 

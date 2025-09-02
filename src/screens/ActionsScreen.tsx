@@ -1,11 +1,18 @@
 import React from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Text, Button, StyleSheet, SafeAreaView } from "react-native";
+import { Appbar } from "react-native-paper";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const ActionsScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text>Actions Screen</Text>
-    </View>
+    <SafeAreaProvider style={{ backgroundColor: "#ffffff" }}>
+      <SafeAreaView style={styles.container}>
+        <Appbar>
+          {/* <Appbar.Action icon="menu" /> */}
+          <Appbar.Content title="Actions" style={styles.title} />
+        </Appbar>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
@@ -14,7 +21,15 @@ export default ActionsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+
+    marginTop: 50,
+    marginBottom: 20,
   },
+  title: {
+    flexDirection: "row",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  chatContainer: { flex: 1, paddingHorizontal: 10 },
 });
