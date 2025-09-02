@@ -47,16 +47,24 @@ const styles = StyleSheet.create({
   },
   userAlign: { alignSelf: "flex-end", marginRight: 8 },
   companionAlign: { alignSelf: "flex-start", marginLeft: 8 },
-  userBackground: { backgroundColor: "#354F52", color: "white" },
-  companionBackground: { backgroundColor: "#CAD2C5", color: "#354F52" },
+  userBackground: {
+    backgroundColor: "#354F52",
+    color: "white",
+    borderTopRightRadius: 4,
+    borderTopLeftRadius: 16,
+  },
+  companionBackground: {
+    backgroundColor: "#CAD2C5",
+    color: "#354F52",
+    borderTopRightRadius: 16,
+    borderTopLeftRadius: 4,
+  },
   userMessage: { color: "white" },
   companionMessage: { color: "#354F52" },
   bubble: {
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 16,
-    borderTopRightRadius: 4,
-    borderTopLeftRadius: 16,
   },
   messageContent: {
     fontSize: 16,

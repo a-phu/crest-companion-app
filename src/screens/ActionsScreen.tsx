@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Button, StyleSheet, SafeAreaView } from "react-native";
 import { Appbar } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import ComingSoonModule from "../components/ComingSoonModule";
 
 const ActionsScreen = () => {
   return (
@@ -11,6 +12,7 @@ const ActionsScreen = () => {
           {/* <Appbar.Action icon="menu" /> */}
           <Appbar.Content title="Actions" style={styles.title} />
         </Appbar>
+        <ComingSoonModule />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -23,7 +25,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
 
-    marginTop: 50,
+    // marginTop: 50,
     marginBottom: 20,
   },
   title: {

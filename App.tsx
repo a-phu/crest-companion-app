@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import "react-native-get-random-values";
 import CrestTabs from "./src/screens/CrestTabs";
 import HomeScreen from "./src/screens/HomeScreen";
+import CrestPageIndicatorTabs from "./src/screens/CrestPageIndicatorTabs";
 
 // TODO: work out nav flow & data flow for app
 const Stack = createStackNavigator();
@@ -21,6 +22,11 @@ export default function App() {
         <Stack.Screen
           name="CrestTabs"
           component={CrestTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CrestPageIndicatorTabs"
+          component={CrestPageIndicatorTabs}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

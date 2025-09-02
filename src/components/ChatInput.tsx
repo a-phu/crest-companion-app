@@ -34,7 +34,7 @@ function ChatInput({ onFocusScroll }: Props) {
           {text.length === 0 ? (
             <Feather name="mic" size={22} style={styles.inputBtn} />
           ) : (
-            <Feather name="send" size={22} style={styles.inputBtn} />
+            <Feather name="arrow-right" size={22} style={styles.inputBtn} />
           )}
         </View>
       </View>
