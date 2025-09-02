@@ -32,9 +32,9 @@ const ChatbotScreen = () => {
           keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
         >
           <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled">
-            {messages.map((item, index) => (
+            {/* {messages.map((item, index) => (
               <MessageBubble key={item.id} msg={item} />
-            ))}
+            ))} */}
           </ScrollView>
           <MessageInputBar onFocusScroll={scrollToBottom} />
         </KeyboardAvoidingView>
