@@ -12,11 +12,19 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 type Props = {
+  onSend: (text: string) => void;
   onFocusScroll: () => void;
 };
 
-function ChatInput({ onFocusScroll }: Props) {
-  const [text, setText] = useState<string>("");
+function ChatInput({ onSend, onFocusScroll }: Props) {
+  const [value, setValue] = useState("");
+
+  const handleSendPress = () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
+    setValue(""); // clear after sending
+  };
 
   return (
     <View style={styles.container}>
@@ -26,32 +34,29 @@ function ChatInput({ onFocusScroll }: Props) {
           placeholder={"Type how you are feeling..."}
           style={styles.textInput}
           onFocus={onFocusScroll}
-          value={text}
-          onChangeText={setText} // updates state whenever input changes
+          value={value}
+          onChangeText={setValue} // updates state whenever input changes
           placeholderTextColor="#bebebeff"
         />
-        <View style={styles.inputBtnContainer}>
-          {text.length === 0 ? (
-            <Feather name="mic" size={22} style={styles.inputBtn} />
-          ) : (
-            <Feather name="arrow-right" size={22} style={styles.inputBtn} />
-          )}
-        </View>
+        <Pressable
+          onPress={handleSendPress}
+          disabled={!value.trim()}
+          hitSlop={8}
+          style={({ pressed }) => [
+            // styles.sendBtn,
+
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <View style={styles.inputBtnContainer}>
+            {value.length === 0 ? (
+              <Feather name="mic" size={22} style={styles.inputBtn} />
+            ) : (
+              <Feather name="arrow-right" size={22} style={styles.inputBtn} />
+            )}
+          </View>
+        </Pressable>
       </View>
-      <Pressable
-        onPress={() => {
-          Alert.alert("You tapped the button!");
-        }}
-        disabled={!text.trim()}
-        hitSlop={8}
-        style={({ pressed }) => [
-          // styles.sendBtn,
-          // !text.trim() && { opacity: 0.4 },
-          // pressed && { opacity: 0.7 },
-        ]}
-      >
-        {/* <Feather name="send" size={22} style={styles.sendBtn} /> */}
-      </Pressable>
     </View>
   );
 }
@@ -80,13 +85,16 @@ const styles = StyleSheet.create({
     paddingRight: 5,
     borderColor: "#bebebeff",
     borderWidth: 2,
+    gap: 5,
   },
   inputBtnContainer: {
     flexDirection: "row",
     gap: 5,
+    // position: "absolute",
   },
   textInput: {
     height: BAR_HEIGHT,
+    width: 275,
     // color: "#687076",
   },
   inputBtn: {
