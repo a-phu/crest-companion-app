@@ -29,7 +29,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#fff", // white text
     textAlign: "center",
-    // fontWeight: "500",
   },
   bubbleBlur: {
     borderRadius: 50,

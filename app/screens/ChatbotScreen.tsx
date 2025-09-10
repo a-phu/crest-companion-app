@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 20,
     marginBottom: 20,
   },
   appBar: {

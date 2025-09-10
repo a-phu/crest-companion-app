@@ -2,7 +2,6 @@ import React, { useRef } from "react";
 import {
   Animated,
   StyleSheet,
-  Text,
   View,
   ImageBackground,
   useWindowDimensions,
@@ -26,7 +25,7 @@ const screens: ScreenEntry[] = [
 
 const pages = ["Page 1", "Page 2", "Page 3"];
 
-export default function CrestPageIndicatorTabs() {
+export default function CrestTabs() {
   const { width, height } = useWindowDimensions();
   const scrollX = useRef(new Animated.Value(0)).current;
   const animatedCurrent = useRef(Animated.divide(scrollX, width)).current;
@@ -89,11 +88,6 @@ const styles = StyleSheet.create({
   },
   indicatorDot: {
     color: "#CAD2C5",
-  },
-  background: {
-    // flex: 1,
-    // alignItems: "center",
-    // justifyContent: "center",
   },
   hueOverlay: {
     ...StyleSheet.absoluteFillObject,

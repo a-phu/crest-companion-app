@@ -2,8 +2,8 @@ import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import "react-native-get-random-values";
-import HomeScreen from "./src/screens/HomeScreen";
-import CrestPageIndicatorTabs from "./src/screens/CrestPageIndicatorTabs";
+import HomeScreen from "./app/screens/HomeScreen";
+import CrestTabs from "./app/screens/CrestTabs";
 
 // TODO: work out nav flow & data flow for app
 const Stack = createStackNavigator();
@@ -20,20 +20,10 @@ export default function App() {
         />
         <Stack.Screen
           name="CrestPageIndicatorTabs"
-          component={CrestPageIndicatorTabs}
+          component={CrestTabs}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    // flex: 1,
-    // marginVertical: 30,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
