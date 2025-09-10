@@ -10,6 +10,13 @@ import {
   Text,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import {
+  useFonts,
+  Quicksand_300Light,
+  Quicksand_400Regular,
+  Quicksand_500Medium,
+  Quicksand_600SemiBold,
+} from "@expo-google-fonts/quicksand";
 
 type Props = {
   onSend: (text: string) => void;
@@ -25,6 +32,17 @@ function ChatInput({ onSend, onFocusScroll }: Props) {
     onSend(trimmed);
     setValue(""); // clear after sending
   };
+
+  let [fontsLoaded] = useFonts({
+    Quicksand_300Light,
+    Quicksand_400Regular,
+    Quicksand_600SemiBold,
+    Quicksand_500Medium,
+  });
+
+  if (!fontsLoaded) {
+    return <Text>Loading...</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -95,6 +113,7 @@ const styles = StyleSheet.create({
   textInput: {
     height: BAR_HEIGHT,
     width: 275,
+    fontFamily: "Quicksand_500Medium",
     // color: "#687076",
   },
   inputBtn: {

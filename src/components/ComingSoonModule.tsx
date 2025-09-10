@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, Image } from "react-native";
 export default function ComingSoonModule() {
   return (
     <View style={styles.contentContainer}>
-      <Text>Coming soon</Text>
+      <Text style={styles.text}>Coming soon</Text>
     </View>
   );
 }
@@ -16,8 +16,9 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: 400,
-    fontSize: 40,
+    fontSize: 20,
     textAlign: "center",
+    color: "#fff",
   },
   contentContainer: {
     flexDirection: "column",

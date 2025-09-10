@@ -4,15 +4,26 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  ImageBackground,
+  Text,
+  Image,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur"; // or from '@react-native-community/blur'
 
 import { messageList } from "../store/MessageStore";
 import ChatInput from "../components/ChatInput";
 import ChatBubble from "../components/ChatBubble";
 import type { Message } from "../utils/types";
 import { Appbar } from "react-native-paper";
-
+import HelpBubble from "../components/HelpBubble";
+import {
+  useFonts,
+  Quicksand_300Light,
+  Quicksand_400Regular,
+  Quicksand_500Medium,
+  Quicksand_600SemiBold,
+} from "@expo-google-fonts/quicksand";
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // TODO: work out how to input messages and display them
@@ -41,7 +52,10 @@ const ChatbotScreen = () => {
     // Simulated delay + reply
     return new Promise((resolve) =>
       setTimeout(
-        () => resolve(`You said: "${userText}". How can I help next?`),
+        () =>
+          resolve(
+            `You said: "${userText}".\nMultiple signals show you're overloaded: poor sleep, skipped meals, and negative self-talk. Let’s stabilise first — no pressure to fix everything. You need clarity, not pressure. Here is a quick fix to calm your nervous system. Do this 3 min breathwork, and report back to me. You have got this, and you are not alone.\nHow can I help next?`
+          ),
         600
       )
     );
@@ -98,25 +112,49 @@ const ChatbotScreen = () => {
       );
     }
   };
+  let [fontsLoaded] = useFonts({
+    Quicksand_300Light,
+    Quicksand_400Regular,
+    Quicksand_600SemiBold,
+    Quicksand_500Medium,
+  });
+
+  if (!fontsLoaded) {
+    return <Text>Loading...</Text>;
+  }
 
   return (
-    <SafeAreaProvider style={{ backgroundColor: "#ffffff" }}>
+    <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <Appbar>
+        <Appbar style={styles.appBarContainer}>
           {/* <Appbar.Action icon="menu" /> */}
-          <Appbar.Content title="Performance Assistant" style={styles.title} />
+          <Appbar.Content
+            title="Performance Assistant"
+            mode="large"
+            style={styles.appBar}
+            titleStyle={styles.title}
+          />
         </Appbar>
+
         <KeyboardAvoidingView
           style={styles.chatContainer}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         >
-          <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled">
-            {messages.map((item, index) => (
-              <ChatBubble key={item.id} msg={item} />
-            ))}
-          </ScrollView>
+          {messages.length === 0 ? (
+            <Text style={styles.welcomeText}>How can I help you today?</Text>
+          ) : (
+            <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled">
+              {messages.map((item) => (
+                <ChatBubble key={item.id} msg={item} />
+              ))}
+            </ScrollView>
+          )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
+          {/* <Image
+            style={styles.crestSmallLogo}
+            source={require("../../assets/crest-small-logo-white.png")}
+          /> */}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -129,14 +167,62 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
-
-    // marginTop: 50,
+    alignItems: "center",
+    marginTop: 20,
     marginBottom: 20,
   },
-  title: {
+  appBar: {
     flexDirection: "row",
-    justifyContent: "center",
+    // justifyContent: "center",
     textAlign: "center",
   },
-  chatContainer: { flex: 1, paddingHorizontal: 10 },
+  appBarContainer: {
+    backgroundColor: "transparent",
+    alignItems: "center",
+    flexDirection: "column",
+  },
+  title: {
+    color: "#fff",
+    fontSize: 30,
+    fontFamily: "Quicksand_500Medium",
+
+    // fontWeight: 500,
+  },
+  chatContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+    // alignItems: "center",
+    width: "100%",
+    // justifyContent: "center",
+  },
+  welcomeText: {
+    color: "white",
+    fontWeight: 500,
+    fontSize: 20,
+    fontFamily: "Quicksand_600SemiBold",
+    // flex: 1,
+    marginTop: 225,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  crestSmallLogo: {
+    height: 30,
+    width: 100,
+  },
+  blurContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+  },
+  shadowBox: {
+    // padding: 20,
+    borderRadius: 10,
+    // iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    // Android
+    elevation: 5,
+  },
 });

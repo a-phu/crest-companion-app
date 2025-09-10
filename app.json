@@ -26,7 +26,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-font"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "29a1059c-5855-4af6-8d3f-5ec0c23d4d79"
+      }
+    },
+    "owner": "annabel_phu"
   }
 }

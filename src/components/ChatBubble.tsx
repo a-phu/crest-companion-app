@@ -29,11 +29,11 @@ export default function ChatBubble({ msg }: Props) {
           {msg.content}
         </Text>
       </View>
-      <Text
+      {/* <Text
         style={[styles.date, isUser ? styles.userAlign : styles.companionAlign]}
       >
         {new Date().toLocaleTimeString()}
-      </Text>
+      </Text> */}
     </View>
   );
 }
@@ -41,26 +41,23 @@ export default function ChatBubble({ msg }: Props) {
 const styles = StyleSheet.create({
   container: {
     alignSelf: "flex-end",
-    maxWidth: "85%",
     marginVertical: 6,
     paddingHorizontal: 12,
   },
-  userAlign: { alignSelf: "flex-end", marginRight: 8 },
-  companionAlign: { alignSelf: "flex-start", marginLeft: 8 },
+  userAlign: { alignSelf: "flex-end", marginRight: 8, maxWidth: "85%" },
+  companionAlign: { alignSelf: "flex-start", marginLeft: 8, width: "95%" },
   userBackground: {
-    backgroundColor: "#354F52",
-    color: "white",
+    backgroundColor: "#50726A",
     borderTopRightRadius: 4,
     borderTopLeftRadius: 16,
   },
   companionBackground: {
-    backgroundColor: "#CAD2C5",
-    color: "#354F52",
-    borderTopRightRadius: 16,
-    borderTopLeftRadius: 4,
+    // backgroundColor: "#ffffff5e",
+    // borderTopRightRadius: 16,
+    // borderTopLeftRadius: 4,
   },
   userMessage: { color: "white" },
-  companionMessage: { color: "#354F52" },
+  companionMessage: { color: "#fff" },
   bubble: {
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -69,6 +66,7 @@ const styles = StyleSheet.create({
   messageContent: {
     fontSize: 16,
     lineHeight: 22,
+    fontWeight: 400,
   },
   date: {
     color: "#94a3b8",

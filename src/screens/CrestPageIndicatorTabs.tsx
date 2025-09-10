@@ -4,12 +4,14 @@ import {
   StyleSheet,
   Text,
   View,
+  ImageBackground,
   useWindowDimensions,
 } from "react-native";
 import { PageIndicator } from "react-native-page-indicator";
 import InsightsScreen from "./InsightsScreen";
 import ActionsScreen from "./ActionsScreen";
 import ChatbotScreen from "./ChatbotScreen";
+import { LinearGradient } from "expo-linear-gradient";
 
 type ScreenEntry = {
   key: string;
@@ -30,7 +32,18 @@ export default function CrestPageIndicatorTabs() {
   const animatedCurrent = useRef(Animated.divide(scrollX, width)).current;
 
   return (
-    <View style={styles.root}>
+    <ImageBackground
+      source={require("../../assets/mountain-abstract.png")}
+      resizeMode="cover"
+      style={styles.root}
+    >
+      {/* <View style={styles.hueOverlay} /> */}
+      <LinearGradient
+        colors={["#425C56", "#789D93"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientOverlay}
+      />
       <Animated.ScrollView
         horizontal={true}
         pagingEnabled={true}
@@ -50,19 +63,19 @@ export default function CrestPageIndicatorTabs() {
       </Animated.ScrollView>
       <View style={styles.pageIndicator}>
         <PageIndicator
-          color="#354F52"
+          color="#ffffff"
           count={pages.length}
           current={animatedCurrent}
         />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "white",
+    // backgroundColor: "white",
   },
   page: {
     // alignItems: "center",
@@ -78,5 +91,18 @@ const styles = StyleSheet.create({
   },
   indicatorDot: {
     color: "#CAD2C5",
+  },
+  background: {
+    // flex: 1,
+    // alignItems: "center",
+    // justifyContent: "center",
+  },
+  hueOverlay: {
+    ...StyleSheet.absoluteFillObject, // fills the whole parent
+    backgroundColor: "#1a252f57", // bluish hue with 30% opacity
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.3,
   },
 });
