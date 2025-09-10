@@ -1,21 +1,14 @@
 import React from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
-import { Appbar } from "react-native-paper";
+import { StyleSheet } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import ComingSoonModule from "../components/ComingSoonModule";
+import CrestAppBar from "../components/CrestAppBar";
 
 const InsightsScreen = () => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <Appbar style={styles.appBarContainer}>
-          {/* <Appbar.Action icon="menu" /> */}
-          <Appbar.Content
-            title="Prepare"
-            style={styles.appBar}
-            titleStyle={styles.title}
-          />
-        </Appbar>
+        <CrestAppBar heading={"Prepare"} />
         <ComingSoonModule />
       </SafeAreaView>
     </SafeAreaProvider>
@@ -27,24 +20,19 @@ export default InsightsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // justifyContent: "space-between",
     marginTop: 20,
     marginBottom: 20,
   },
   contentContainer: {
     flexDirection: "column",
     flex: 1,
-    // justifyContent: "center",
-    // alignItems: "center",
   },
   title: {
     color: "#fff",
     fontSize: 30,
-    // fontWeight: 500,
   },
   appBar: {
     flexDirection: "row",
-    // justifyContent: "center",
     textAlign: "center",
   },
   chatContainer: { flex: 1, paddingHorizontal: 10 },

@@ -37,7 +37,6 @@ export default function CrestPageIndicatorTabs() {
       resizeMode="cover"
       style={styles.root}
     >
-      {/* <View style={styles.hueOverlay} /> */}
       <LinearGradient
         colors={["#425C56", "#789D93"]}
         start={{ x: 0, y: 0 }}
@@ -75,7 +74,6 @@ export default function CrestPageIndicatorTabs() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    // backgroundColor: "white",
   },
   page: {
     // alignItems: "center",
@@ -98,8 +96,8 @@ const styles = StyleSheet.create({
     // justifyContent: "center",
   },
   hueOverlay: {
-    ...StyleSheet.absoluteFillObject, // fills the whole parent
-    backgroundColor: "#1a252f57", // bluish hue with 30% opacity
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#1a252f57",
   },
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,

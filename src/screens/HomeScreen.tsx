@@ -2,7 +2,6 @@ import {
   StyleSheet,
   View,
   Text,
-  Button,
   ImageBackground,
   Pressable,
   Image,
@@ -54,7 +53,6 @@ export default function HomeScreen({ navigation }) {
       resizeMode="cover"
       style={styles.background}
     >
-      {/* Hue overlay */}
       {/* <View style={styles.hueOverlay} /> */}
       {/* <LinearGradient
         colors={["#425C56", "#789D93"]}
@@ -76,14 +74,10 @@ export default function HomeScreen({ navigation }) {
               I am the{"\n"}Crest Companion.
             </Text>
           </View>
-
-          {/* <Text style={styles.subtitleText}>How are you today?</Text> */}
           <Pressable
             style={styles.checkInBtn}
-            //   onPress={() => navigation.navigate("CrestTabs")}
             onPress={() => navigation.navigate("CrestPageIndicatorTabs")}
           >
-            {/* <Feather name="triangle" size={14} style={styles.checkInIcon} /> */}
             <Text style={styles.checkInText}>&#9656; Check-in</Text>
           </Pressable>
         </View>
@@ -127,19 +121,13 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     color: "#fff",
-    // fontWeight: 400,
     fontSize: 40,
     fontFamily: "Raleway_500Medium_Italic",
-    // flex: 1,
-    // textAlign: "center",
   },
   subtitleText: {
     color: "#fff",
-    // fontWeight: 400,
     fontSize: 40,
     fontFamily: "Quicksand_500Medium",
-    // flex: 1,
-    // textAlign: "center",
   },
   checkInBtn: {
     borderRadius: 30,

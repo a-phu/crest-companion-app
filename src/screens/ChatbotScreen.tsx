@@ -4,19 +4,17 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
-  ImageBackground,
   Text,
-  Image,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur"; // or from '@react-native-community/blur'
 
 import { messageList } from "../store/MessageStore";
 import ChatInput from "../components/ChatInput";
 import ChatBubble from "../components/ChatBubble";
 import type { Message } from "../utils/types";
 import { Appbar } from "react-native-paper";
-import HelpBubble from "../components/HelpBubble";
+import CrestAppBar from "../components/CrestAppBar";
+
 import {
   useFonts,
   Quicksand_300Light,
@@ -30,7 +28,6 @@ const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const ChatbotScreen = () => {
   const [text, setText] = React.useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  // const [responses]
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -38,7 +35,7 @@ const ChatbotScreen = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  // Stub for assistant reply (replace with your API call)
+  // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (userText: string): Promise<string> => {
     // Example: call your backend
     // const resp = await fetch("https://your-backend/chat", {
@@ -112,6 +109,7 @@ const ChatbotScreen = () => {
       );
     }
   };
+
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -126,16 +124,7 @@ const ChatbotScreen = () => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <Appbar style={styles.appBarContainer}>
-          {/* <Appbar.Action icon="menu" /> */}
-          <Appbar.Content
-            title="Performance Assistant"
-            mode="large"
-            style={styles.appBar}
-            titleStyle={styles.title}
-          />
-        </Appbar>
-
+        <CrestAppBar heading={"Performance Assistant"} />
         <KeyboardAvoidingView
           style={styles.chatContainer}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -151,10 +140,6 @@ const ChatbotScreen = () => {
             </ScrollView>
           )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
-          {/* <Image
-            style={styles.crestSmallLogo}
-            source={require("../../assets/crest-small-logo-white.png")}
-          /> */}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -168,12 +153,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 15,
     marginBottom: 20,
   },
   appBar: {
     flexDirection: "row",
-    // justifyContent: "center",
     textAlign: "center",
   },
   appBarContainer: {
@@ -185,22 +169,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 30,
     fontFamily: "Quicksand_500Medium",
-
-    // fontWeight: 500,
   },
   chatContainer: {
     flex: 1,
     paddingHorizontal: 10,
-    // alignItems: "center",
     width: "100%",
-    // justifyContent: "center",
   },
   welcomeText: {
     color: "white",
     fontWeight: 500,
     fontSize: 20,
     fontFamily: "Quicksand_600SemiBold",
-    // flex: 1,
     marginTop: 225,
     marginBottom: 10,
     textAlign: "center",
@@ -208,21 +187,5 @@ const styles = StyleSheet.create({
   crestSmallLogo: {
     height: 30,
     width: 100,
-  },
-  blurContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
-  shadowBox: {
-    // padding: 20,
-    borderRadius: 10,
-    // iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    // Android
-    elevation: 5,
   },
 });
