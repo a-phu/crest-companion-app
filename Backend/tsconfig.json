@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",          // modern JS features
+    "module": "CommonJS",        // Node uses CommonJS for require/import
+    "rootDir": "src",            // where TS looks for code
+    "outDir": "dist",            // where compiled JS goes
+    "strict": true,              // catch more errors
+    "esModuleInterop": true,     // smoother default import syntax
+    "skipLibCheck": true         // skip type checks in node_modules for speed
+  },
+  "include": ["src/**/*"]
+}

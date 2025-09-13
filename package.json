@@ -16,6 +16,8 @@
     "@expo-google-fonts/raleway": "^0.4.1",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "eas-cli": "^16.18.0",
     "expo": "~53.0.22",
     "expo-blur": "~14.1.5",
@@ -24,6 +26,8 @@
     "expo-router": "~5.1.5",
     "expo-sqlite": "^15.2.14",
     "expo-status-bar": "~2.2.3",
+    "express": "^5.1.0",
+    "morgan": "^1.10.1",
     "nativewind": "^4.1.23",
     "openai": "^5.12.2",
     "prettier-plugin-tailwindcss": "^0.5.14",
@@ -49,9 +53,27 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@react-native-community/cli": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.3.3",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.73.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nas0404/crest-companion-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nas0404/crest-companion-app/issues"
+  },
+  "homepage": "https://github.com/nas0404/crest-companion-app#readme"
 }
