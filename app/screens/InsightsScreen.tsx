@@ -27,18 +27,4 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     flex: 1,
   },
-  title: {
-    color: "#fff",
-    fontSize: 30,
-  },
-  appBar: {
-    flexDirection: "row",
-    textAlign: "center",
-  },
-  chatContainer: { flex: 1, paddingHorizontal: 10 },
-  appBarContainer: {
-    backgroundColor: "transparent",
-    alignItems: "center",
-    flexDirection: "column",
-  },
 });

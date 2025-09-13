@@ -1,14 +1,6 @@
 import "react-native-get-random-values";
 import React, { useState } from "react";
-import {
-  Alert,
-  Button,
-  StyleSheet,
-  TextInput,
-  View,
-  Pressable,
-  Text,
-} from "react-native";
+import { StyleSheet, TextInput, View, Pressable, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import {
   useFonts,
@@ -62,7 +54,6 @@ function ChatInput({ onSend, onFocusScroll }: Props) {
           hitSlop={8}
           style={({ pressed }) => [
             // styles.sendBtn,
-
             pressed && { opacity: 0.7 },
           ]}
         >
@@ -85,7 +76,6 @@ const BAR_HEIGHT = 50;
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,r
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
@@ -98,7 +88,6 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "space-between",
-    // width: "90%",
     paddingLeft: 15,
     paddingRight: 5,
     borderColor: "#bebebeff",
@@ -108,13 +97,11 @@ const styles = StyleSheet.create({
   inputBtnContainer: {
     flexDirection: "row",
     gap: 5,
-    // position: "absolute",
   },
   textInput: {
     height: BAR_HEIGHT,
     width: 275,
     fontFamily: "Quicksand_500Medium",
-    // color: "#687076",
   },
   inputBtn: {
     padding: 10,
@@ -125,7 +112,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   sendBtnOnClick: {
     backgroundColor: "#354F52",
   },
