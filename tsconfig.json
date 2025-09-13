@@ -3,5 +3,6 @@
   "compilerOptions": {
     "strict": true
   },
-  "types": ["expo__sqlite"]
+  "include": ["app/**/*", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
