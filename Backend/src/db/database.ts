@@ -57,7 +57,20 @@ export async function saveUser(user: {
         ]
     );
 }
-
+// Update only weight_kg and notes for a given user
+export async function updateUser(
+  user_id: string,
+  weight_kg: number,
+  notes: string
+) {
+  const now = new Date().toISOString();
+  await db.runAsync(
+    `UPDATE users
+     SET weight_kg = ?, notes = ?, updated_at = ?
+     WHERE user_id = ?`,
+    [weight_kg, notes, now, user_id]
+  );
+}
 // Get a single user
 export async function getUser(userId: string) {
     return await db.getFirstAsync("SELECT * FROM users WHERE user_id = ?", [userId]);
