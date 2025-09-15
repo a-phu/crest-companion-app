@@ -1,28 +1,15 @@
-import React, { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import "react-native-get-random-values";
 import HomeScreen from "./app/screens/HomeScreen";
 import CrestTabs from "./app/screens/CrestTabs";
-import { DbSmokeTest } from "./Backend/src/db/DbSmokeTest"; // ← add this
 
+// TODO: work out nav flow & data flow for app
 const Stack = createStackNavigator();
 
+// TODO: create splash screen
 export default function App() {
-  // Run once on app start; logs print in Metro terminal
-  useEffect(() => {
-    if (__DEV__) {
-      (async () => {
-        try {
-          await DbSmokeTest();
-        } catch (e) {
-          console.error("DB smoke test failed:", e);
-        }
-      })();
-    }
-  }, []);
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
