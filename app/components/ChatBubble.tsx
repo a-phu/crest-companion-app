@@ -1,5 +1,6 @@
 import type { Message } from "../utils/types";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Markdown from "react-native-markdown-display";
 
 type Props = { msg: Message };
 
@@ -19,21 +20,8 @@ export default function ChatBubble({ msg }: Props) {
           isUser ? styles.userBackground : styles.companionBackground,
         ]}
       >
-        <Text
-          selectable
-          style={[
-            styles.messageContent,
-            isUser ? styles.userMessage : styles.companionMessage,
-          ]}
-        >
-          {msg.content}
-        </Text>
+        <Markdown style={markdownStyles}>{msg.content}</Markdown>
       </View>
-      {/* <Text
-        style={[styles.date, isUser ? styles.userAlign : styles.companionAlign]}
-      >
-        {new Date().toLocaleTimeString()}
-      </Text> */}
     </View>
   );
 }
@@ -56,10 +44,8 @@ const styles = StyleSheet.create({
     // borderTopRightRadius: 16,
     // borderTopLeftRadius: 4,
   },
-  userMessage: { color: "white" },
-  companionMessage: { color: "#fff" },
   bubble: {
-    paddingVertical: 10,
+    paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 16,
   },
@@ -73,4 +59,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: { fontSize: 16, lineHeight: 22, fontWeight: 400, color: "#fff" },
+  heading1: { fontSize: 24, color: "#fff" },
+  strong: { color: "#fff" }, // bold text
+  em: { fontStyle: "italic", color: "#fff" }, // italic
+  list_item: { marginVertical: 4 },
 });

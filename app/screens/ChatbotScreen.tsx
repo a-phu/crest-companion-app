@@ -22,6 +22,9 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+
+import api from "../scripts/axiosClient"; // path to your axiosClient.ts
+
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // TODO: work out how to input messages and display them
@@ -36,7 +39,7 @@ const ChatbotScreen = () => {
   };
 
   // Stub for assistant reply (replace with API call)
-  const fetchAssistantReply = async (userText: string): Promise<string> => {
+  const fetchAssistantReply = async (message: string): Promise<string> => {
     // Example: call your backend
     // const resp = await fetch("https://your-backend/chat", {
     //   method: "POST",
@@ -46,16 +49,25 @@ const ChatbotScreen = () => {
     // const data = await resp.json();
     // return data.reply;
 
+    // const sendMessage = async (message: string) => {
+    try {
+      const response = await api.post("/chat", { text: message });
+      return response.data.reply;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
+    // };
     // Simulated delay + reply
-    return new Promise((resolve) =>
-      setTimeout(
-        () =>
-          resolve(
-            `You said: "${userText}".\nMultiple signals show you're overloaded: poor sleep, skipped meals, and negative self-talk. Let’s stabilise first — no pressure to fix everything. You need clarity, not pressure. Here is a quick fix to calm your nervous system. Do this 3 min breathwork, and report back to me. You have got this, and you are not alone.\nHow can I help next?`
-          ),
-        600
-      )
-    );
+    // return new Promise((resolve) =>
+    //   setTimeout(
+    //     () =>
+    //       resolve(
+    //         `You said: "${userText}".\nMultiple signals show you're overloaded: poor sleep, skipped meals, and negative self-talk. Let’s stabilise first — no pressure to fix everything. You need clarity, not pressure. Here is a quick fix to calm your nervous system. Do this 3 min breathwork, and report back to me. You have got this, and you are not alone.\nHow can I help next?`
+    //       ),
+    //     600
+    //   )
+    // );
   };
 
   const handleSend = async (userText: string) => {
