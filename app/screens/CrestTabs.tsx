@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { PageIndicator } from "react-native-page-indicator";
 import InsightsScreen from "./InsightsScreen";
-import ActionsScreen from "./ActionsScreen";
+import ProgramsScreen from "./ProgramsScreen";
 import ChatbotScreen from "./ChatbotScreen";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -20,7 +20,7 @@ type ScreenEntry = {
 const screens: ScreenEntry[] = [
   { key: "chatbot", component: ChatbotScreen }, // index 0
   { key: "insights", component: InsightsScreen }, // index 1
-  { key: "actions", component: ActionsScreen }, // index 2
+  { key: "actions", component: ProgramsScreen }, // index 2
 ];
 
 const pages = ["Page 1", "Page 2", "Page 3"];
@@ -32,12 +32,12 @@ export default function CrestTabs() {
 
   return (
     <ImageBackground
-      source={require("../../assets/mountain-abstract.png")}
+      source={require("../../assets/backgrounds/mountain-abstract.png")}
       resizeMode="cover"
       style={styles.root}
     >
       <LinearGradient
-        colors={["#425C56", "#789D93"]}
+        colors={["#425C56", "#AFCBCB"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientOverlay}

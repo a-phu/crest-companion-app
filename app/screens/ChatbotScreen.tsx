@@ -9,9 +9,9 @@ import {
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 
 import { messageList } from "../store/MessageStore";
-import ChatInput from "../components/ChatInput";
-import ChatBubble from "../components/ChatBubble";
-import type { Message } from "../utils/types";
+import ChatInput from "../components/chat/ChatInput";
+import ChatBubble from "../components/chat/ChatBubble";
+import type { Message } from "../utils/message";
 import { Appbar } from "react-native-paper";
 import CrestAppBar from "../components/CrestAppBar";
 

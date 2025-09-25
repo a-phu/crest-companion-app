@@ -1,4 +1,4 @@
-import type { Message } from "../utils/types";
+import type { Message } from "../../utils/message";
 import { StyleSheet, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 

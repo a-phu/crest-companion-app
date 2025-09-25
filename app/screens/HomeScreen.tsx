@@ -49,7 +49,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <ImageBackground
-      source={require("../../assets/mountain-snow.png")}
+      source={require("../../assets/backgrounds/mountain-snow.png")}
       resizeMode="cover"
       style={styles.background}
     >
@@ -64,7 +64,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.logoContainer}>
           <Image
             style={styles.crestLogo}
-            source={require("../../assets/crest-logo-white.png")}
+            source={require("../../assets/crest/crest-logo-white.png")}
           />
         </View>
         <View style={styles.contentContainer}>
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
     gap: 10,
     height: 50,
     marginBottom: 100,
+    fontFamily: "Quicksand_500Medium",
   },
   checkInText: {
     fontWeight: 500,
