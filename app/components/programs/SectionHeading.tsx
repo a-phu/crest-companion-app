@@ -7,12 +7,20 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+import { ProgramSchedule } from "../../utils/program";
 
 type SectionHeadingProps = {
   title: string;
+  schedule: ProgramSchedule;
 };
 
-const SectionHeading: React.FC<SectionHeadingProps> = ({ title }) => {
+const sectionColors: Record<ProgramSchedule, string> = {
+  [ProgramSchedule.Today]: "#425C56",
+  [ProgramSchedule.ThisWeek]: "#fff",
+  [ProgramSchedule.NextWeek]: "#fff",
+};
+
+const SectionHeading: React.FC<SectionHeadingProps> = ({ title, schedule }) => {
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -26,9 +34,26 @@ const SectionHeading: React.FC<SectionHeadingProps> = ({ title }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.line} />
-      <Text style={styles.text}>{title}</Text>
-      <View style={styles.line} />
+      <View
+        style={[
+          styles.line,
+          { backgroundColor: sectionColors[schedule as ProgramSchedule] },
+        ]}
+      />
+      <Text
+        style={[
+          styles.text,
+          { color: sectionColors[schedule as ProgramSchedule] },
+        ]}
+      >
+        {title}
+      </Text>
+      <View
+        style={[
+          styles.line,
+          { backgroundColor: sectionColors[schedule as ProgramSchedule] },
+        ]}
+      />
     </View>
   );
 };

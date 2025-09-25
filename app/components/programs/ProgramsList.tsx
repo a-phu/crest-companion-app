@@ -132,7 +132,7 @@ const ProgramsList: React.FC = () => {
   return (
     <ScrollView>
       <View style={styles.section}>
-        <SectionHeading title={"Today"} />
+        <SectionHeading title={"Today"} schedule={ProgramSchedule.Today} />
         {todayPrograms.length > 0 ? (
           todayPrograms.map((program, index) => (
             <ProgramCard
@@ -148,7 +148,10 @@ const ProgramsList: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        <SectionHeading title={"This Week"} />
+        <SectionHeading
+          title={"This Week"}
+          schedule={ProgramSchedule.ThisWeek}
+        />
         {thisWeekPrograms.length > 0 ? (
           thisWeekPrograms.map((program, index) => (
             <ProgramCard
@@ -164,7 +167,10 @@ const ProgramsList: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        <SectionHeading title={"Next Week"} />
+        <SectionHeading
+          title={"Next Week"}
+          schedule={ProgramSchedule.NextWeek}
+        />
         {nextWeekPrograms.length > 0 ? (
           nextWeekPrograms.map((program, index) => (
             <ProgramCard
