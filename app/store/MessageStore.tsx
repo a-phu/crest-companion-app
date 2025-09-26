@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import type { Message } from "../utils/types";
+import type { Message } from "../utils/message";
 import "react-native-get-random-values";
 // TODO: set up store for storing actual messages
 export const messageList: Message[] = [

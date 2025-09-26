@@ -49,7 +49,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <ImageBackground
-      source={require("../../assets/mountain-snow.png")}
+      source={require("../../assets/backgrounds/mountain-snow.png")}
       resizeMode="cover"
       style={styles.background}
     >
@@ -64,14 +64,14 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.logoContainer}>
           <Image
             style={styles.crestLogo}
-            source={require("../../assets/crest-logo-white.png")}
+            source={require("../../assets/crest/crest-logo-white.png")}
           />
         </View>
         <View style={styles.contentContainer}>
           <View>
-            <Text style={styles.welcomeText}>Hello!</Text>
+            {/* <Text style={styles.welcomeText}>Hello!</Text> */}
             <Text style={styles.subtitleText}>
-              I am the{"\n"}Crest Companion.
+              Hello! I am the{"\n"}Crest Companion.
             </Text>
           </View>
           <Pressable
@@ -116,18 +116,20 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 30,
     // alignItems: "center", // comment this for full width
-    justifyContent: "flex-end",
+    justifyContent: "center",
     flexDirection: "column",
   },
   welcomeText: {
     color: "#fff",
     fontSize: 40,
     fontFamily: "Raleway_500Medium_Italic",
+    textAlign: "center",
   },
   subtitleText: {
     color: "#fff",
     fontSize: 40,
     fontFamily: "Quicksand_500Medium",
+    textAlign: "center",
   },
   checkInBtn: {
     borderRadius: 30,
@@ -140,6 +142,7 @@ const styles = StyleSheet.create({
     gap: 10,
     height: 50,
     marginBottom: 100,
+    fontFamily: "Quicksand_500Medium",
   },
   checkInText: {
     fontWeight: 500,
