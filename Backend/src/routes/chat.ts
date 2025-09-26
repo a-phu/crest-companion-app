@@ -1,17 +1,17 @@
 // backend/src/routes/chat.ts
 
-import { Router } from 'express';
-import { supa } from '../supabase';          // Server-side Supabase client (uses service role key)
-import { openai } from '../OpenaiClient';    // OpenAI client (uses OPENAI_API_KEY)
-import { HUMAN_ID, AI_ID } from '../id';     // Fixed UUIDs for your demo human + AI
-import { classifyImportance } from '../importance'; // Importance classification helper
+import { Router } from "express";
+import { supa } from "../supabase"; // Server-side Supabase client (uses service role key)
+import { openai } from "../OpenaiClient"; // OpenAI client (uses OPENAI_API_KEY)
+import { HUMAN_ID, AI_ID } from "../id"; // Fixed UUIDs for your demo human + AI
+import { classifyImportance } from "../importance"; // Importance classification helper
 const router = Router();
 
 /**
  * Lightweight ping to confirm that this router is mounted under /api/chat.
  * Use in Postman: GET http://localhost:8080/api/chat/__ping
  */
-router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'chat' }));
+router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "chat" }));
 
 /**
  * POST /api/chat
@@ -28,20 +28,21 @@ router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'chat' }));
  *  8) Insert the AI reply with its own is_important flag.
  *  9) Return the reply (and a small meta payload for debugging/testing).
  */
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     // --- 1) Validate input ---------------------------------------------------
     // Normalize to string and trim whitespace. Empty input is a 400 (client) error.
-    const text = String(req.body?.text ?? '').trim();
-    if (!text) return res.status(400).json({ error: 'text required' });
+    const text = String(req.body?.text ?? "").trim();
+    if (!text) return res.status(400).json({ error: "text required" });
 
+    console.log(req.body);
     // --- 2) Persist the USER message ----------------------------------------
     // We insert first so the message exists in the DB even if the model call fails.
     // SELECT ... .single() returns the inserted row; here we only need the message_id.
     const u = await supa
-      .from('message')
+      .from("message")
       .insert({ sender_id: HUMAN_ID, receiver_id: AI_ID, content: text })
-      .select('message_id')
+      .select("message_id")
       .single();
     if (u.error) throw u.error; // handle FK, RLS, or other DB errors early
 
@@ -60,14 +61,14 @@ router.post('/', async (req, res) => {
     // We fetch the last N turns (both directions) oldest→newest, so the model
     // sees a coherent conversation history. Keep this small to control token usage.
     const recent = await supa
-      .from('message')
-      .select('sender_id, content')
+      .from("message")
+      .select("sender_id, content")
       .or(
         // Conversation is exactly Human <-> AI (your two fixed UUIDs)
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
-        `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
+          `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
-      .order('created_at', { ascending: true })
+      .order("created_at", { ascending: true })
       .limit(20);
     if (recent.error) throw recent.error;
 
@@ -76,27 +77,36 @@ router.post('/', async (req, res) => {
     // - Prepend a concise system prompt to steer tone & length.
     const messages = [
       {
-        role: 'system' as const,
+        role: "system" as const,
         content:
-          'You are a concise, kind fitness & wellbeing companion. Keep replies short and practical.'
+          "You are a concise, kind fitness & wellbeing companion. Keep replies short and practical.",
       },
-      ...(recent.data ?? []).map(r => ({
-        role: r.sender_id === HUMAN_ID ? ('user' as const) : ('assistant' as const),
-        content: r.content
-      }))
+      ...(recent.data ?? []).map((r) => ({
+        role:
+          r.sender_id === HUMAN_ID ? ("user" as const) : ("assistant" as const),
+        content: r.content,
+      })),
     ];
+
+    for (let i = 0; i < recent.data.length; i++) {
+      console.log(`Recent at index ${i}: ${recent.data[i]}`);
+    }
 
     // --- 5) Call OpenAI for the assistant reply ------------------------------
     // Use a compact model + small max_tokens to keep responses tight for MVP.
     const resp = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.3,   // lower = more deterministic
-      max_tokens: 300,    // short, practical replies
-      messages
+      model: "gpt-4o-mini",
+      temperature: 0.3, // lower = more deterministic
+      max_tokens: 300, // short, practical replies
+      messages,
     });
 
     // Defensive: if the API returns no content, use a friendly fallback.
-    const reply = resp.choices?.[0]?.message?.content?.trim() || 'Sorry, I had trouble replying.';
+    const reply =
+      resp.choices?.[0]?.message?.content?.trim() ||
+      "Sorry, I had trouble replying.";
+
+    console.log("reply " + reply);
 
     // --- 6) Classify the AI reply importance (in parallel with userImp) -----
     // Running both in Promise.all resolves userImpP and AI classification together.
@@ -108,7 +118,7 @@ router.post('/', async (req, res) => {
         } catch {
           return { important: false as const };
         }
-      })()
+      })(),
     ]);
 
     // --- 7) Update USER row with is_important if needed ----------------------
@@ -116,22 +126,22 @@ router.post('/', async (req, res) => {
     // so that even if classification fails, the user message was still saved.
     if (userImp.important) {
       await supa
-        .from('message')
+        .from("message")
         .update({ is_important: true })
-        .eq('message_id', u.data!.message_id);
+        .eq("message_id", u.data!.message_id);
     }
 
     // --- 8) Persist the AI reply with its own is_important -------------------
     // Insert the assistant response, committing the AI-side importance flag.
     const a = await supa
-      .from('message')
+      .from("message")
       .insert({
         sender_id: AI_ID,
         receiver_id: HUMAN_ID,
         content: reply,
-        is_important: !!aiImp.important
+        is_important: !!aiImp.important,
       })
-      .select('message_id')
+      .select("message_id")
       .single();
     if (a.error) throw a.error;
 
@@ -140,13 +150,13 @@ router.post('/', async (req, res) => {
       reply,
       meta: {
         userImportant: !!userImp.important,
-        aiImportant: !!aiImp.important
-      }
+        aiImportant: !!aiImp.important,
+      },
     });
   } catch (e: any) {
     // All unexpected errors end up here — return 500 with a clear message.
     // Common cases: Supabase connection/permission issue, malformed env, OpenAI errors not caught above.
-    res.status(500).json({ error: e.message || 'unknown error' });
+    res.status(500).json({ error: e.message || "unknown error" });
   }
 });
 

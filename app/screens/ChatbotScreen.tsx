@@ -7,12 +7,9 @@ import {
   Text,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-
-import { messageList } from "../store/MessageStore";
-import ChatInput from "../components/ChatInput";
-import ChatBubble from "../components/ChatBubble";
-import type { Message } from "../utils/types";
-import { Appbar } from "react-native-paper";
+import ChatInput from "../components/chat/ChatInput";
+import ChatBubble from "../components/chat/ChatBubble";
+import type { Message } from "../utils/message";
 import CrestAppBar from "../components/CrestAppBar";
 
 import {
@@ -22,9 +19,11 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+
+import api from "../scripts/axiosClient";
+
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-// TODO: work out how to input messages and display them
 const ChatbotScreen = () => {
   const [text, setText] = React.useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,26 +35,14 @@ const ChatbotScreen = () => {
   };
 
   // Stub for assistant reply (replace with API call)
-  const fetchAssistantReply = async (userText: string): Promise<string> => {
-    // Example: call your backend
-    // const resp = await fetch("https://your-backend/chat", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ message: userText, history: messages }),
-    // });
-    // const data = await resp.json();
-    // return data.reply;
-
-    // Simulated delay + reply
-    return new Promise((resolve) =>
-      setTimeout(
-        () =>
-          resolve(
-            `You said: "${userText}".\nMultiple signals show you're overloaded: poor sleep, skipped meals, and negative self-talk. Let’s stabilise first — no pressure to fix everything. You need clarity, not pressure. Here is a quick fix to calm your nervous system. Do this 3 min breathwork, and report back to me. You have got this, and you are not alone.\nHow can I help next?`
-          ),
-        600
-      )
-    );
+  const fetchAssistantReply = async (message: string): Promise<string> => {
+    try {
+      const response = await api.post("/chat", { text: message });
+      return response.data.reply;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
   };
 
   const handleSend = async (userText: string) => {
@@ -72,7 +59,7 @@ const ChatbotScreen = () => {
     // Show user message immediately
     setMessages((prev) => [...prev, userMsg]);
 
-    // Optional: show a “typing…” placeholder
+    // TODO: add styling to “typing…” placeholder
     const typingId = genId();
     setMessages((prev) => [
       ...prev,
