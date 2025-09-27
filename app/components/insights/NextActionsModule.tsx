@@ -9,18 +9,18 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const actions = [
-  {
-    title: "Option 1. Breathwork Session",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...",
-  },
-  {
-    title: "Option 2. Guided Cold Exposure",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...",
-  },
-];
+interface NextActionsModuleProps {
+  actions?: Array<{
+    title: string;
+    text: string;
+  }>;
+}
 
-const NextActionsModule: React.FC = () => {
+const NextActionsModule: React.FC<NextActionsModuleProps> = ({ actions: actionsData }) => {
+  const actions = actionsData || [
+    { title: "Loading Action 1...", text: "Please wait while we generate your personalized recommendations." },
+    { title: "Loading Action 2...", text: "Your insights are being prepared based on your conversation history." },
+  ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
