@@ -1,16 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  onAuthStateChanged,
-  signInAnonymously,
-  EmailAuthProvider,
-  linkWithCredential,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as fbSignOut,
-  User,
-} from 'firebase/auth';
-import { auth } from '../firebase/config';
+
+// Stub types for Firebase User
+type User = {
+  uid: string;
+  email?: string | null;
+  isAnonymous?: boolean;
+} | null;
 
 type AuthContextType = {
   user: User | null;
@@ -31,40 +27,28 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user] = useState<User>({ uid: 'demo-user', isAnonymous: true });
+  const [loading] = useState(false);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
-
+  // Stub functions - Firebase auth disabled for now
   const ensureAnonymous = async () => {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-    }
+    console.log('Auth stub: ensureAnonymous called');
   };
 
   const linkEmailPassword = async (email: string, password: string) => {
-    if (!auth.currentUser) throw new Error('No current user to link');
-    if (!auth.currentUser.isAnonymous) throw new Error('Current user is already persistent');
-    const credential = EmailAuthProvider.credential(email, password);
-    await linkWithCredential(auth.currentUser, credential);
+    console.log('Auth stub: linkEmailPassword called', { email });
   };
 
   const createAccount = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    console.log('Auth stub: createAccount called', { email });
   };
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    console.log('Auth stub: signIn called', { email });
   };
 
   const signOut = async () => {
-    await fbSignOut(auth);
+    console.log('Auth stub: signOut called');
   };
 
   return (
