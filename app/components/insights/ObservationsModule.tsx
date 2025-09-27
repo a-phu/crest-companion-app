@@ -11,24 +11,36 @@ import {
 
 interface ObservationsModuleProps {
   observations?: {
-    sleep: string;
-    nutrition: string;
-    mood: string;
     cognition: string;
+    identity: string;
+    mind: string;
+    clinical: string;
+    nutrition: string;
+    training: string;
+    body: string;
+    sleep: string;
   };
 }
 
 const ObservationsModule: React.FC<ObservationsModuleProps> = ({ observations: observationsData }) => {
   const observations = observationsData ? [
-    { title: "Sleep", text: observationsData.sleep },
-    { title: "Nutrition", text: observationsData.nutrition },
-    { title: "Mood", text: observationsData.mood },
     { title: "Cognition", text: observationsData.cognition },
+    { title: "Identity", text: observationsData.identity },
+    { title: "Mind", text: observationsData.mind },
+    { title: "Clinical", text: observationsData.clinical },
+    { title: "Nutrition", text: observationsData.nutrition },
+    { title: "Training", text: observationsData.training },
+    { title: "Body", text: observationsData.body },
+    { title: "Sleep", text: observationsData.sleep },
   ] : [
-    { title: "Sleep", text: "Loading sleep insights..." },
-    { title: "Nutrition", text: "Loading nutrition insights..." },
-    { title: "Mood", text: "Loading mood insights..." },
     { title: "Cognition", text: "Loading cognition insights..." },
+    { title: "Identity", text: "Loading identity insights..." },
+    { title: "Mind", text: "Loading mind insights..." },
+    { title: "Clinical", text: "Loading clinical insights..." },
+    { title: "Nutrition", text: "Loading nutrition insights..." },
+    { title: "Training", text: "Loading training insights..." },
+    { title: "Body", text: "Loading body insights..." },
+    { title: "Sleep", text: "Loading sleep insights..." },
   ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -78,11 +90,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
   },
   card: {
     width: "48%",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   cardTitle: {
     marginBottom: 4,

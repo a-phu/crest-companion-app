@@ -16,10 +16,14 @@ import {
 
 type InsightsData = {
   observations: {
-    sleep: string;
-    nutrition: string;
-    mood: string;
     cognition: string;
+    identity: string;
+    mind: string;
+    clinical: string;
+    nutrition: string;
+    training: string;
+    body: string;
+    sleep: string;
   };
   nextActions: Array<{
     title: string;

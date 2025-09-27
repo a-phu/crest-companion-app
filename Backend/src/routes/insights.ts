@@ -33,25 +33,29 @@ router.get('/', async (_req, res) => {
     if (error) throw error;
 
     if (!messages || messages.length === 0) {
-      // Return default insights if no conversation history, not working at the moment
+      // Return default insights if no conversation history
       return res.json({
         observations: {
-          sleep: "Start tracking your sleep patterns by sharing how you feel each morning.",
+          cognition: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
+          identity: "Tell me about your personal goals and values to understand your identity and purpose.",
+          mind: "Discuss your mental health, stress levels, and emotional wellbeing patterns.",
+          clinical: "Share any health concerns, symptoms, or medical observations for clinical insights.",
           nutrition: "Tell me about your meals and eating habits to get personalized nutrition insights.",
-          mood: "Share your daily mood and energy levels to identify patterns.",
-          cognition: "Discuss your focus, memory, and mental clarity to optimize cognitive performance."
+          training: "Describe your exercise routines and physical activity to optimize your training.",
+          body: "Share how your body feels, energy levels, and physical sensations throughout the day.",
+          sleep: "Start tracking your sleep patterns by sharing how you feel each morning."
         },
         nextActions: [
           {
-            title: "Begin Your Wellness Journey",
-            text: "Start by sharing your current sleep schedule and how you typically feel in the mornings."
+            title: "Start Your Holistic Assessment",
+            text: "Begin by sharing your current sleep schedule, energy levels, and how you typically feel throughout the day."
           },
           {
-            title: "Track Daily Patterns",
-            text: "Tell me about your energy levels, mood, and any challenges you're facing each day."
+            title: "Define Your Goals",
+            text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving."
           }
         ],
-        reveal: "Welcome to your personalized wellness insights! As you share more about your daily experiences, sleep patterns, nutrition habits, and how you're feeling, I'll analyze these conversations to provide increasingly personalized observations and actionable recommendations. The more you engage, the more valuable these insights become."
+        reveal: "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."
       });
     }
 
@@ -69,10 +73,14 @@ Based on the conversation, provide insights in this EXACT JSON format:
 
 {
   "observations": {
-    "sleep": "Brief observation about sleep patterns (1-2 sentences max)",
-    "nutrition": "Brief observation about nutrition/eating habits (1-2 sentences max)", 
-    "mood": "Brief observation about mood/emotional patterns (1-2 sentences max)",
-    "cognition": "Brief observation about focus/mental clarity (1-2 sentences max)"
+    "cognition": "Brief observation about focus/mental clarity (1-2 sentences max)",
+    "identity": "Brief observation about personal goals/values/purpose (1-2 sentences max)",
+    "mind": "Brief observation about mental health/stress/emotional patterns (1-2 sentences max)",
+    "clinical": "Brief observation about health concerns/symptoms/medical patterns (1-2 sentences max)",
+    "nutrition": "Brief observation about nutrition/eating habits (1-2 sentences max)",
+    "training": "Brief observation about exercise/physical activity patterns (1-2 sentences max)",
+    "body": "Brief observation about physical sensations/energy/body awareness (1-2 sentences max)",
+    "sleep": "Brief observation about sleep patterns (1-2 sentences max)"
   },
   "nextActions": [
     {
