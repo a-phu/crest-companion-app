@@ -9,26 +9,27 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const observations = [
-  {
-    title: "Sleep",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Nutrition",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Mood",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Cognition",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-];
+interface ObservationsModuleProps {
+  observations?: {
+    sleep: string;
+    nutrition: string;
+    mood: string;
+    cognition: string;
+  };
+}
 
-const ObservationsModule: React.FC = () => {
+const ObservationsModule: React.FC<ObservationsModuleProps> = ({ observations: observationsData }) => {
+  const observations = observationsData ? [
+    { title: "Sleep", text: observationsData.sleep },
+    { title: "Nutrition", text: observationsData.nutrition },
+    { title: "Mood", text: observationsData.mood },
+    { title: "Cognition", text: observationsData.cognition },
+  ] : [
+    { title: "Sleep", text: "Loading sleep insights..." },
+    { title: "Nutrition", text: "Loading nutrition insights..." },
+    { title: "Mood", text: "Loading mood insights..." },
+    { title: "Cognition", text: "Loading cognition insights..." },
+  ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
