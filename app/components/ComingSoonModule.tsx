@@ -1,4 +1,4 @@
-import type { Message } from "../utils/types";
+import type { Message } from "../utils/message";
 import { StyleSheet, Text, View, Image } from "react-native";
 
 export default function ComingSoonModule() {

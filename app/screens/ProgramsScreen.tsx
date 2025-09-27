@@ -1,21 +1,22 @@
 import React from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import ComingSoonModule from "../components/ComingSoonModule";
 import CrestAppBar from "../components/CrestAppBar";
+import SectionHeading from "../components/programs/SectionHeading";
+import ProgramsList from "../components/programs/ProgramsList";
 
-const ActionsScreen = () => {
+const ProgramsScreen = () => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <CrestAppBar heading={"Schedule"} />
-        <ComingSoonModule />
+        <CrestAppBar heading={"Programs"} />
+        <ProgramsList />
       </SafeAreaView>
     </SafeAreaProvider>
   );
 };
 
-export default ActionsScreen;
+export default ProgramsScreen;
 
 const styles = StyleSheet.create({
   container: {
