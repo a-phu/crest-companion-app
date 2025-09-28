@@ -12,5 +12,8 @@ export default () => ({
     android: {
       package: "com.annabel_phu.yourapp",
     },
+    ios: {
+      bundleIdentifier: "com.annabel-phu.yourapp",
+    },
   },
 });
