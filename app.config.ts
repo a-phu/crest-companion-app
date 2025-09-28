@@ -15,4 +15,7 @@ export default () => ({
       "expo-speech-recognition",
     ],
   },
+  android: {
+    package: "com.annabel_phu.yourapp",
+  },
 });
