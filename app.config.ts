@@ -14,8 +14,8 @@ export default () => ({
       "expo-sqlite",
       "expo-speech-recognition",
     ],
-  },
-  android: {
-    package: "com.annabel_phu.yourapp",
+    android: {
+      package: "com.annabel_phu.yourapp",
+    },
   },
 });

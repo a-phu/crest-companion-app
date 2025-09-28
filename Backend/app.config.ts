@@ -9,8 +9,8 @@ export default () => ({
       supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
     plugins: ["expo-font", "expo-router", "expo-sqlite"],
-  },
-  android: {
-    package: "com.annabel_phu.yourapp",
+    android: {
+      package: "com.annabel_phu.yourapp",
+    },
   },
 });
