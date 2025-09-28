@@ -3,6 +3,6 @@
   "compilerOptions": {
     "strict": true
   },
-  "include": ["app/**/*", "**/*.ts", "**/*.tsx"],
+  "include": ["app/**/*", "**/*.ts", "**/*.tsx", "Backend/src/routes", "Backend/src/types"],
   "exclude": ["node_modules"]
 }
