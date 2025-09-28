@@ -40,5 +40,3 @@ app.use((req, res) => res.status(404).json({ error: 'Not Found', path: req.origi
 
 const port = Number(process.env.PORT || 8080);
 app.listen(port, () => console.log(`API listening on http://localhost:${port}`));
-
-export default app;
