@@ -9,6 +9,10 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 
 type Props = {
   onSend: (text: string) => void;
@@ -17,12 +21,43 @@ type Props = {
 
 function ChatInput({ onSend, onFocusScroll }: Props) {
   const [value, setValue] = useState("");
+  const [voiceModeOn, setVoiceMode] = useState(false);
+  const [recognizing, setRecognizing] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   const handleSendPress = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
     onSend(trimmed);
     setValue(""); // clear after sending
+  };
+
+  useSpeechRecognitionEvent("start", () => setRecognizing(true));
+  useSpeechRecognitionEvent("end", () => setRecognizing(false));
+  useSpeechRecognitionEvent("result", (event) => {
+    setTranscript(event.results[0]?.transcript);
+  });
+  useSpeechRecognitionEvent("error", (event) => {
+    console.log("error code:", event.error, "error message:", event.message);
+  });
+
+  const startListening = async () => {
+    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+    if (!result.granted) {
+      console.warn("Permissions not granted", result);
+      return;
+    }
+    // Start speech recognition
+    ExpoSpeechRecognitionModule.start({
+      lang: "en-US",
+      interimResults: true,
+      continuous: false,
+    });
+  };
+
+  const stopListening = () => {
+    ExpoSpeechRecognitionModule.stop();
   };
 
   let [fontsLoaded] = useFonts({
@@ -38,7 +73,7 @@ function ChatInput({ onSend, onFocusScroll }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* <Text>You typed: {text}</Text> */}
+      <Text>You said: {transcript}</Text>
       <View style={styles.inputContainer}>
         <TextInput
           placeholder={"Type how you are feeling..."}
@@ -49,7 +84,7 @@ function ChatInput({ onSend, onFocusScroll }: Props) {
           placeholderTextColor="#bebebeff"
         />
         <Pressable
-          onPress={handleSendPress}
+          onPress={!recognizing ? startListening : stopListening}
           disabled={!value.trim()}
           hitSlop={8}
           style={({ pressed }) => [
@@ -58,10 +93,15 @@ function ChatInput({ onSend, onFocusScroll }: Props) {
           ]}
         >
           <View style={styles.inputBtnContainer}>
-            {value.length === 0 ? (
+            {/* {value.length === 0 ? (
               <Feather name="mic" size={22} style={styles.inputBtn} />
             ) : (
               <Feather name="arrow-right" size={22} style={styles.inputBtn} />
+            )} */}
+            {!recognizing ? (
+              <Feather name="mic" size={22} style={styles.inputBtn} />
+            ) : (
+              <Feather name="mic-off" size={22} style={styles.inputBtn} />
             )}
           </View>
         </Pressable>

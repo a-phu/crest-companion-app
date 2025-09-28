@@ -8,6 +8,11 @@ export default () => ({
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
-    plugins: ["expo-font", "expo-router", "expo-sqlite"],
+    plugins: [
+      "expo-font",
+      "expo-router",
+      "expo-sqlite",
+      "expo-speech-recognition",
+    ],
   },
 });
