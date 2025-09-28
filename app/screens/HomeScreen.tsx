@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "space-between",
     // padding: 20,
-    marginTop: 250,
+    marginTop: 225,
     gap: 40,
     // backgroundColor: "#354f5249",
   },
@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
     height: 300,
     width: 300,
   },
-
   contentContainer: {
     flex: 1,
     gap: 30,
@@ -146,7 +145,7 @@ const styles = StyleSheet.create({
   },
   checkInText: {
     fontWeight: 500,
-    fontSize: 16,
+    fontSize: 20,
     color: "#1A252F",
     fontFamily: "Quicksand_600SemiBold",
   },

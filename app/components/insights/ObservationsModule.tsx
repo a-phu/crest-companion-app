@@ -28,6 +28,14 @@ const observations = [
   },
 ];
 
+// Map observation title → icon name
+const observationIcons: Record<string, keyof typeof MaterialIcons.glyphMap> = {
+  Sleep: "bedtime", // 🌙
+  Nutrition: "restaurant", // 🍴
+  Mood: "sentiment-satisfied", // 🙂
+  Cognition: "psychology", // 🧠
+};
+
 const ObservationsModule: React.FC = () => {
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -48,7 +56,11 @@ const ObservationsModule: React.FC = () => {
           <View key={idx} style={styles.card}>
             <Text style={styles.cardTitle}>
               {item.title}{" "}
-              <MaterialIcons name="check-circle" size={16} color="#4a7c7c" />
+              <MaterialIcons
+                name={observationIcons[item.title] || "info"} // fallback if not found
+                size={20}
+                color="#4a7c7c"
+              />
             </Text>
             <Text style={styles.cardText}>{item.text}</Text>
           </View>
