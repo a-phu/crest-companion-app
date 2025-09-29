@@ -8,7 +8,22 @@ export default () => ({
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
-    plugins: ["expo-font", "expo-router", "expo-sqlite"],
+    plugins: [
+      "expo-font",
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-speech-recognition",
+        {
+          microphonePermission: "Allow $(PRODUCT_NAME) to use the microphone.",
+          speechRecognitionPermission:
+            "Allow $(PRODUCT_NAME) to use speech recognition.",
+          androidSpeechServicePackages: [
+            "com.google.android.googlequicksearchbox",
+          ],
+        },
+      ],
+    ],
     android: {
       package: "com.annabel_phu.yourapp",
     },

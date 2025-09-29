@@ -12,13 +12,23 @@ export default () => ({
       "expo-font",
       "expo-router",
       "expo-sqlite",
-      "expo-speech-recognition",
+      [
+        "expo-speech-recognition",
+        {
+          microphonePermission: "Allow $(PRODUCT_NAME) to use the microphone.",
+          speechRecognitionPermission:
+            "Allow $(PRODUCT_NAME) to use speech recognition.",
+          androidSpeechServicePackages: [
+            "com.google.android.googlequicksearchbox",
+          ],
+        },
+      ],
     ],
     android: {
-      package: "com.annabel_phu.yourapp",
+      package: "com.crest.companion",
     },
     ios: {
-      bundleIdentifier: "com.annabel-phu.yourapp",
+      bundleIdentifier: "com.crest.companion",
     },
   },
 });
