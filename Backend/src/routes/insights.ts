@@ -106,12 +106,11 @@ Based on the conversation, provide insights in this EXACT JSON format:
 }
 
 Guidelines:
-- Only include observations for categories mentioned in conversations
-- For missing categories, use encouraging prompts to start tracking
+- Always return ALL categories, even if the conversation did not mention them
+- For categories not mentioned, write a short, encouraging default message to start tracking (e.g. "No health concerns shared yet — consider noting any symptoms for future insights.")
 - Make next actions specific and immediately actionable
 - The reveal should identify a meaningful pattern or connection
 - Keep all text concise and personal
-- Focus on what they've actually shared, not generic advice
 
 Return ONLY valid JSON.`;
 
