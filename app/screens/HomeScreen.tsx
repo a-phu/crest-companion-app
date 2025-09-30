@@ -71,7 +71,7 @@ export default function HomeScreen({ navigation }) {
           <View>
             {/* <Text style={styles.welcomeText}>Hello!</Text> */}
             <Text style={styles.subtitleText}>
-              Hello! I am the{"\n"}Crest Companion.
+              Hello! I am the{"\n"}Crest Companion
             </Text>
           </View>
           <Pressable
