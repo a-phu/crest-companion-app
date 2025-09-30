@@ -8,7 +8,11 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const RevealModule: React.FC = () => {
+interface RevealModuleProps {
+  reveal?: string;
+}
+
+const RevealModule: React.FC<RevealModuleProps> = ({ reveal }) => {
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -24,10 +28,7 @@ const RevealModule: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.heading}>Let’s reveal what’s really going on…</Text>
       <Text style={styles.text}>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-        commodo consequat.
+        {reveal || "Loading your personalized insights..."}
       </Text>
     </View>
   );

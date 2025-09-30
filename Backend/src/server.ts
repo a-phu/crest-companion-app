@@ -5,6 +5,7 @@ import cors from 'cors';
 import messages from './routes/messages';
 import chat from './routes/chat';
 import debugRoutes from './routes/debug';   // ← add this
+import insights from './routes/insights';
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/messages', messages);
 app.use('/api/chat', chat);
 app.use('/api/debug', debugRoutes);         // ← mount here
+app.use('/api/insights', insights);
 
 // optional: route inspector to confirm what's mounted
 app.get('/__debug/routes', (_req, res) => {
