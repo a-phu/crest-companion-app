@@ -1,3 +1,4 @@
+//backend/src/embedding.ts
 import e from "express";
 import OpenAI from "openai";
 export const EMBED_MODEL = "text-embedding-3-small"; // 1536 dims
