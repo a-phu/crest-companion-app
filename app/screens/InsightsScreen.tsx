@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, Text, ActivityIndicator, View } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  View,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import CrestAppBar from "../components/CrestAppBar";
 import ObservationsModule from "../components/insights/ObservationsModule";
@@ -36,6 +43,7 @@ const InsightsScreen = () => {
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -44,31 +52,37 @@ const InsightsScreen = () => {
     Quicksand_600SemiBold,
   });
 
-  useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/insights');
-        setInsights(response.data);
-        setError(null);
-      } catch (err: any) {
-        console.error('Failed to fetch insights:', err);
-        setError('Failed to load insights. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchInsights = useCallback(async () => {
+    try {
+      if (!refreshing) setLoading(true);
+      const response = await api.get("/insights");
+      setInsights(response.data);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to fetch insights:", err);
+      setError("Failed to load insights. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [refreshing]);
 
+  useEffect(() => {
     if (fontsLoaded) {
       fetchInsights();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fetchInsights]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchInsights();
+  }, [fetchInsights]);
 
   if (!fontsLoaded) {
     return <Text>Loading fonts...</Text>;
   }
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}>
@@ -88,7 +102,9 @@ const InsightsScreen = () => {
         <SafeAreaView style={styles.container}>
           <CrestAppBar heading={"Prepare"} />
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error || 'Unable to load insights'}</Text>
+            <Text style={styles.errorText}>
+              {error || "Unable to load insights"}
+            </Text>
           </View>
         </SafeAreaView>
       </SafeAreaProvider>
@@ -102,6 +118,9 @@ const InsightsScreen = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <RevealModule reveal={insights.reveal} />
           <ObservationsModule observations={insights.observations} />
@@ -127,26 +146,26 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#7fa6a6',
+    color: "#7fa6a6",
     fontFamily: "Quicksand_500Medium",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#ff6b6b',
-    textAlign: 'center',
+    color: "#ff6b6b",
+    textAlign: "center",
     fontFamily: "Quicksand_500Medium",
   },
 });

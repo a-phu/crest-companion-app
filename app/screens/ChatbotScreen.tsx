@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Platform,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import ChatInput from "../components/chat/ChatInput";
@@ -26,6 +27,8 @@ const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const ChatbotScreen = () => {
   const [text, setText] = React.useState("");
+  const [loading, setLoading] = useState(false);
+
   const [messages, setMessages] = useState<Message[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -37,7 +40,10 @@ const ChatbotScreen = () => {
   // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (message: string): Promise<string> => {
     try {
-      const response = await api.post("/chat", { text: message });
+      const response = await api.post(
+        "/chat/b9576a32-334b-4444-866e-4ec176d377ff",
+        { text: message }
+      );
       return response.data.reply;
     } catch (error) {
       console.error("Error sending message:", error);
@@ -61,6 +67,7 @@ const ChatbotScreen = () => {
 
     // TODO: add styling to “typing…” placeholder
     const typingId = genId();
+
     setMessages((prev) => [
       ...prev,
       {
@@ -72,6 +79,7 @@ const ChatbotScreen = () => {
     ]);
 
     try {
+      setLoading(true);
       const reply = await fetchAssistantReply(trimmed);
 
       // Replace the typing bubble with the real reply
@@ -127,6 +135,7 @@ const ChatbotScreen = () => {
             </ScrollView>
           )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
+          {/* {loading && <ActivityIndicator size="large" color="#7fa6a6" />} */}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>

@@ -404,12 +404,18 @@ function looksLikeProgramAsk(s: string): boolean {
   );
 }
 
-function attachTimingHeaders(res: Response, profile: Array<{ step: string; ms: number }>) {
+function attachTimingHeaders(
+  res: Response,
+  profile: Array<{ step: string; ms: number }>
+) {
   try {
     const total = profile.find((p) => p.step === "TOTAL")?.ms ?? 0;
     const serverTiming = profile
       .filter((p) => p.step !== "TOTAL")
-      .map((p) => `${p.step.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60)};dur=${p.ms.toFixed(1)}`)
+      .map(
+        (p) =>
+          `${p.step.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60)};dur=${p.ms.toFixed(1)}`
+      )
       .join(", ");
     if (serverTiming) res.setHeader("Server-Timing", serverTiming);
     res.setHeader("X-Chat-Total-MS", String(total.toFixed(1)));
@@ -418,7 +424,11 @@ function attachTimingHeaders(res: Response, profile: Array<{ step: string; ms: n
   }
 }
 
-async function classifyWithRetry(text: string, P: Profiler, label: "user" | "ai"): Promise<Importance> {
+async function classifyWithRetry(
+  text: string,
+  P: Profiler,
+  label: "user" | "ai"
+): Promise<Importance> {
   const fallback: Importance = {
     important: false,
     agent_type: "other",
@@ -436,7 +446,9 @@ async function classifyWithRetry(text: string, P: Profiler, label: "user" | "ai"
       const t0 = process.hrtime.bigint();
       const r = await classifyImportance(text);
       const t1 = process.hrtime.bigint();
-      P.mark(`classify_${label}_done_retry`, { ms_inner: Number(t1 - t0) / 1_000_000 });
+      P.mark(`classify_${label}_done_retry`, {
+        ms_inner: Number(t1 - t0) / 1_000_000,
+      });
       return r;
     } catch {
       P.mark(`classify_${label}_failed`);
@@ -470,12 +482,17 @@ type BaseContext = {
   messages: ChatMessage[];
 };
 
-async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseContext> {
+async function fetchBaseContext(
+  humanId: string,
+  P: Profiler
+): Promise<BaseContext> {
   // recent 12 (desc -> asc)
   const q0 = process.hrtime.bigint();
   const recentQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -484,7 +501,10 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
     .limit(12);
   const q1 = process.hrtime.bigint();
   if (recentQ.error) throw recentQ.error;
-  P.mark("fetch_recent_done", { ms_inner: Number(q1 - q0) / 1_000_000, count: (recentQ.data ?? []).length });
+  P.mark("fetch_recent_done", {
+    ms_inner: Number(q1 - q0) / 1_000_000,
+    count: (recentQ.data ?? []).length,
+  });
 
   const recent: MessageRow[] = (recentQ.data ?? []) as MessageRow[];
   recent.reverse();
@@ -497,7 +517,9 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
   const q2 = process.hrtime.bigint();
   const impQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -509,7 +531,10 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
     .limit(10);
   const q3 = process.hrtime.bigint();
   if (impQ.error) throw impQ.error;
-  P.mark("fetch_boosters_done", { ms_inner: Number(q3 - q2) / 1_000_000, total_considered: (impQ.data ?? []).length });
+  P.mark("fetch_boosters_done", {
+    ms_inner: Number(q3 - q2) / 1_000_000,
+    total_considered: (impQ.data ?? []).length,
+  });
 
   const boosters: MessageRow[] = [];
   for (const m of (impQ.data ?? []) as MessageRow[]) {
@@ -526,7 +551,10 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
     content: String(m.content ?? ""),
   }));
   const m1 = process.hrtime.bigint();
-  P.mark("map_rows_to_messages", { ms_inner: Number(m1 - m0) / 1_000_000, rows: rows.length });
+  P.mark("map_rows_to_messages", {
+    ms_inner: Number(m1 - m0) / 1_000_000,
+    rows: rows.length,
+  });
 
   P.mark("fetch_base_ctx_done", {
     recent: recent.length,
@@ -551,7 +579,9 @@ async function fetchRagSlice(
   const r0 = process.hrtime.bigint();
   const ragQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -562,7 +592,10 @@ async function fetchRagSlice(
     .limit(8);
   const r1 = process.hrtime.bigint();
   if (ragQ.error) throw ragQ.error;
-  P.mark("fetch_rag_query_done", { ms_inner: Number(r1 - r0) / 1_000_000, raw: (ragQ.data ?? []).length });
+  P.mark("fetch_rag_query_done", {
+    ms_inner: Number(r1 - r0) / 1_000_000,
+    raw: (ragQ.data ?? []).length,
+  });
 
   let ragRows: MessageRow[] = ((ragQ.data ?? []) as MessageRow[]).filter(
     (m) => !blockIds.has(m.message_id)
@@ -621,7 +654,9 @@ router.post("/:humanId", async (req, res) => {
     const programHint = looksLikeProgramAsk(text);
 
     const [userImp, baseCtx] = await Promise.all([userClassifyP, baseCtxP]);
-    P.mark("after_user_classify_and_basectx", { agent_type: userImp.agent_type });
+    P.mark("after_user_classify_and_basectx", {
+      agent_type: userImp.agent_type,
+    });
 
     // Early, non-blocking user-row update
     void supa
@@ -632,7 +667,9 @@ router.post("/:humanId", async (req, res) => {
       })
       .eq("message_id", ins0.data!.message_id)
       .then(({ error }) =>
-        error ? P.mark("user_update_error", { error: error.message }) : P.mark("user_update_ok")
+        error
+          ? P.mark("user_update_error", { error: error.message })
+          : P.mark("user_update_ok")
       );
 
     // 3) RAG-lite slice using agent_type
@@ -662,23 +699,30 @@ router.post("/:humanId", async (req, res) => {
         "- Safety/form notes\n" +
         "Prefer clear lists over paragraphs.\n";
     }
-    const messages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...ctx];
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...ctx,
+    ];
     const b1 = process.hrtime.bigint();
-    P.mark("build_prompt", { total_msgs: messages.length, ms_inner: Number(b1 - b0) / 1_000_000 });
+    P.mark("build_prompt", {
+      total_msgs: messages.length,
+      ms_inner: Number(b1 - b0) / 1_000_000,
+    });
 
     // 5) Model call
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.3,
-      max_tokens: Math.min(350, Number(req.body?.max_tokens ?? 350)),
+      max_tokens: 1000,
       messages,
     });
     const o1 = process.hrtime.bigint();
     P.mark("openai_complete", { ms_inner: Number(o1 - o0) / 1_000_000 });
 
     const reply =
-      resp.choices?.[0]?.message?.content?.trim() || "Sorry, I had trouble replying.";
+      resp.choices?.[0]?.message?.content?.trim() ||
+      "Sorry, I had trouble replying.";
 
     // 6) Insert AI reply row (sync)
     const ins1 = await supa
@@ -720,7 +764,8 @@ router.post("/:humanId", async (req, res) => {
             agent_type: aiImp.agent_type,
           })
           .eq("message_id", ins1.data!.message_id);
-        if (upd1.error) P.mark("update_ai_msg_error", { error: upd1.error.message });
+        if (upd1.error)
+          P.mark("update_ai_msg_error", { error: upd1.error.message });
         else P.mark("update_ai_msg_ok");
       } catch (e: any) {
         P.mark("post_response_pipeline_error", { error: e?.message });
@@ -728,7 +773,9 @@ router.post("/:humanId", async (req, res) => {
     })();
   } catch (err: any) {
     const profile = P.report();
-    console.error(JSON.stringify({ reqId: P.id, error: err?.message, profile }, null, 2));
+    console.error(
+      JSON.stringify({ reqId: P.id, error: err?.message, profile }, null, 2)
+    );
     res.status(500).json({ error: err?.message || "unknown error" });
   }
 });

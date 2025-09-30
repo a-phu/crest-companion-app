@@ -1,34 +1,35 @@
 // backend/src/routes/insights.ts
-import { Router } from 'express';
-import { supa } from '../supabase';
-import { HUMAN_ID, AI_ID } from '../id';
-import { openai } from '../OpenaiClient';
+import { Router } from "express";
+import { supa } from "../supabase";
+import { HUMAN_ID, AI_ID } from "../id";
+import { openai } from "../OpenaiClient";
 
 const router = Router();
 
 /** sanity ping */
-router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'insights' }));
+router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "insights" }));
 
+// TODO: do I need to add in my id to this request too?
 /**
  * GET /api/insights
  * Analyzes recent conversation history to generate personalized wellness insights
  * Returns structured data for ObservationsModule, NextActionsModule, and RevealModule
  */
-router.get('/', async (_req, res) => {
+router.get("/", async (_req, res) => {
   try {
     // Get conversation history from last 30 days, prioritizing important messages
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const { data: messages, error } = await supa
-      .from('message')
-      .select('*')
+      .from("message")
+      .select("*")
       .or(
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
-        `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
+          `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .order('created_at', { ascending: true });
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
 
@@ -36,35 +37,44 @@ router.get('/', async (_req, res) => {
       // Return default insights if no conversation history
       return res.json({
         observations: {
-          cognition: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
-          identity: "Tell me about your personal goals and values to understand your identity and purpose.",
+          cognition:
+            "Share your focus, memory, and mental clarity to optimize cognitive performance.",
+          identity:
+            "Tell me about your personal goals and values to understand your identity and purpose.",
           mind: "Discuss your mental health, stress levels, and emotional wellbeing patterns.",
-          clinical: "Share any health concerns, symptoms, or medical observations for clinical insights.",
-          nutrition: "Tell me about your meals and eating habits to get personalized nutrition insights.",
-          training: "Describe your exercise routines and physical activity to optimize your training.",
+          clinical:
+            "Share any health concerns, symptoms, or medical observations for clinical insights.",
+          nutrition:
+            "Tell me about your meals and eating habits to get personalized nutrition insights.",
+          training:
+            "Describe your exercise routines and physical activity to optimize your training.",
           body: "Share how your body feels, energy levels, and physical sensations throughout the day.",
-          sleep: "Start tracking your sleep patterns by sharing how you feel each morning."
+          sleep:
+            "Start tracking your sleep patterns by sharing how you feel each morning.",
         },
         nextActions: [
           {
             title: "Start Your Holistic Assessment",
-            text: "Begin by sharing your current sleep schedule, energy levels, and how you typically feel throughout the day."
+            text: "Begin by sharing your current sleep schedule, energy levels, and how you typically feel throughout the day.",
           },
           {
             title: "Define Your Goals",
-            text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving."
-          }
+            text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving.",
+          },
         ],
-        reveal: "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."
+        reveal:
+          "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey.",
       });
     }
 
     // Prepare conversation context for AI analysis
-    const conversationContext = messages.map(msg => {
-      const isUser = msg.sender_id === HUMAN_ID;
-      const importance = msg.is_important ? ' [IMPORTANT]' : '';
-      return `${isUser ? 'User' : 'Assistant'}${importance}: ${msg.content}`;
-    }).join('\n\n');
+    const conversationContext = messages
+      .map((msg) => {
+        const isUser = msg.sender_id === HUMAN_ID;
+        const importance = msg.is_important ? " [IMPORTANT]" : "";
+        return `${isUser ? "User" : "Assistant"}${importance}: ${msg.content}`;
+      })
+      .join("\n\n");
 
     // Generate insights using OpenAI
     const systemPrompt = `You are a wellness coach analyzing conversation history to generate personalized insights. 
@@ -106,31 +116,33 @@ Guidelines:
 Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: "gpt-4o-mini",
       temperature: 0.3,
-      response_format: { type: 'json_object' },
+      response_format: { type: "json_object" },
       max_tokens: 800,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Analyze this conversation history and generate personalized wellness insights:\n\n${conversationContext}` }
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Analyze this conversation history and generate personalized wellness insights:\n\n${conversationContext}`,
+        },
       ],
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? '{}';
+    const raw = completion.choices?.[0]?.message?.content ?? "{}";
     const insights = JSON.parse(raw);
 
     // Validate the response structure
     if (!insights.observations || !insights.nextActions || !insights.reveal) {
-      throw new Error('Invalid insights response structure');
+      throw new Error("Invalid insights response structure");
     }
 
     res.json(insights);
-
   } catch (e: any) {
-    console.error('Insights generation error:', e);
-    res.status(500).json({ 
-      error: 'Failed to generate insights',
-      details: e.message || 'unknown error' 
+    console.error("Insights generation error:", e);
+    res.status(500).json({
+      error: "Failed to generate insights",
+      details: e.message || "unknown error",
     });
   }
 });
