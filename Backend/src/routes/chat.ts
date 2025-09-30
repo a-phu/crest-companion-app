@@ -1667,7 +1667,7 @@ router.post("/:humanId", async (req, res) => {
     const resp = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.3,
-      max_tokens: Math.min(350, Number(req.body?.max_tokens ?? 350)),
+      max_tokens: 1000,
       messages,
     });
     const o1 = process.hrtime.bigint();
