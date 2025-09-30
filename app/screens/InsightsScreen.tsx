@@ -39,7 +39,7 @@ type InsightsData = {
   reveal: string;
 };
 
-const InsightsScreen = () => {
+const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +68,7 @@ const InsightsScreen = () => {
   }, [refreshing]);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (isVisible && fontsLoaded) {
       fetchInsights();
     }
   }, [fontsLoaded, fetchInsights]);

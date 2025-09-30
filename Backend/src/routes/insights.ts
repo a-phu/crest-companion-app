@@ -115,7 +115,7 @@ Guidelines:
 Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-nano",
       temperature: 0.3,
       response_format: { type: "json_object" },
       max_tokens: 800,

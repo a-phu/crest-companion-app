@@ -6,6 +6,7 @@ import {
   Platform,
   Text,
   ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import ChatInput from "../components/chat/ChatInput";
@@ -26,7 +27,6 @@ import api from "../scripts/axiosClient";
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const ChatbotScreen = () => {
-  const [text, setText] = React.useState("");
   const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -73,7 +73,7 @@ const ChatbotScreen = () => {
       {
         id: typingId,
         role: "assistant",
-        content: "…", // or "Assistant is typing"
+        content: "", // or "Assistant is typing"
         createdAt: Date.now(),
       },
     ]);
@@ -102,6 +102,8 @@ const ChatbotScreen = () => {
             : m
         )
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -134,8 +136,14 @@ const ChatbotScreen = () => {
               ))}
             </ScrollView>
           )}
+          {loading && (
+            <View
+              style={{ padding: 10, alignItems: "center", marginBottom: 250 }}
+            >
+              <ActivityIndicator size="small" color="#7fa6a6" />
+            </View>
+          )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
-          {/* {loading && <ActivityIndicator size="large" color="#7fa6a6" />} */}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>

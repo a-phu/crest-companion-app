@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Animated,
   StyleSheet,
@@ -29,6 +29,7 @@ export default function CrestTabs() {
   const { width, height } = useWindowDimensions();
   const scrollX = useRef(new Animated.Value(0)).current;
   const animatedCurrent = useRef(Animated.divide(scrollX, width)).current;
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   return (
     <ImageBackground
@@ -46,16 +47,15 @@ export default function CrestTabs() {
         horizontal={true}
         pagingEnabled={true}
         showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          {
-            useNativeDriver: true,
-          }
-        )}
+        onScroll={(event) => {
+          const offsetX = event.nativeEvent.contentOffset.x;
+          setCurrentIndex(Math.round(offsetX / width));
+          scrollX.setValue(offsetX);
+        }}
       >
-        {screens.map(({ key, component: Screen }) => (
+        {screens.map(({ key, component: Screen }, index) => (
           <View key={key} style={[styles.page, { width, height }]}>
-            <Screen />
+            <Screen isVisible={currentIndex === index} />
           </View>
         ))}
       </Animated.ScrollView>
