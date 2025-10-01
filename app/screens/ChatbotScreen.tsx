@@ -140,7 +140,7 @@ const ChatbotScreen = () => {
             <View
               style={{ padding: 10, alignItems: "center", marginBottom: 250 }}
             >
-              <ActivityIndicator size="small" color="#7fa6a6" />
+              <ActivityIndicator size="small" color="#fff" />
             </View>
           )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />

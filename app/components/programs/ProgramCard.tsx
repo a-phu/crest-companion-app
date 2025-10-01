@@ -79,7 +79,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
           <Text style={styles.titleOverlay}>{title}</Text>
 
           <TouchableOpacity onPress={toggleExpand}>
-            <Text style={styles.moreOverlay}>{expanded ? "" : "More..."}</Text>
+            <Text style={styles.moreOverlay}>{expanded ? "" : "╋"}</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -88,7 +88,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
         <View style={styles.content}>
           <Markdown style={markdownStyles}>{content}</Markdown>
           <TouchableOpacity onPress={toggleExpand}>
-            <Text style={styles.more}>{expanded ? "Less..." : ""}</Text>
+            <Text style={styles.more}>{expanded ? "━" : ""}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
     color: "#425C56",
     textAlign: "right",
     marginTop: 8,
+    marginRight: 12,
     opacity: 0.9,
     fontFamily: "Quicksand_600SemiBold",
   },
@@ -154,6 +155,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "right",
     marginTop: 8,
+    marginRight: 12,
     opacity: 0.9,
     fontFamily: "Quicksand_600SemiBold",
   },

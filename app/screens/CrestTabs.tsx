@@ -51,11 +51,12 @@ export default function CrestTabs() {
           const offsetX = event.nativeEvent.contentOffset.x;
           setCurrentIndex(Math.round(offsetX / width));
           scrollX.setValue(offsetX);
+          // console.log(`current index: ${currentIndex}`);
         }}
       >
         {screens.map(({ key, component: Screen }, index) => (
           <View key={key} style={[styles.page, { width, height }]}>
-            <Screen isVisible={currentIndex === index} />
+            <Screen isVisible={currentIndex === 1} />
           </View>
         ))}
       </Animated.ScrollView>

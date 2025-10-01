@@ -39,8 +39,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#7fa6a6",
     borderRadius: 30,
     padding: 24,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    margin: 16,
+
     gap: 10,
   },
   heading: {

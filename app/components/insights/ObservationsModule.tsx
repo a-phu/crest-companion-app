@@ -47,19 +47,6 @@ const ObservationsModule: React.FC<ObservationsModuleProps> = ({
         { title: "Sleep", text: "Loading sleep insights..." },
       ];
 
-  // Map observation title → icon name
-  // const observationIcons: Record<string, keyof typeof MaterialIcons.glyphMap> =
-  //   {
-  //     Cognition: "psychology", // 🧠
-  //     Identity: "sentiment-satisfied", // 🙂
-  //     Mind: "person", // 👤
-  //     Clinical: "local-hospital", // 🏥
-  //     Nutrition: "restaurant", // 🍴
-  //     Training: "fitness-center", // 🏋️‍♀️
-  //     Body: "face-retouching-natural", // 💁‍♀️
-  //     Sleep: "bedtime", // 🌙
-  //   };
-
   const observationIcons: Record<string, keyof typeof MaterialIcons.glyphMap> =
     {
       Cognition: "psychology", // 🧠 thinking, analysis
@@ -110,7 +97,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#C1CDC4",
     borderRadius: 30,
     padding: 24,
-    margin: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     gap: 10,
   },
   heading: {

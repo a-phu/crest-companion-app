@@ -68,10 +68,11 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   }, [refreshing]);
 
   useEffect(() => {
+    console.log(`isVisible ${isVisible}`);
     if (isVisible && fontsLoaded) {
       fetchInsights();
     }
-  }, [fontsLoaded, fetchInsights]);
+  }, [isVisible, fontsLoaded, fetchInsights]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -88,7 +89,7 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
         <SafeAreaView style={styles.container}>
           <CrestAppBar heading={"Prepare"} />
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#7fa6a6" />
+            <ActivityIndicator size="small" color="#fff" />
             <Text style={styles.loadingText}>Generating your insights...</Text>
           </View>
         </SafeAreaView>
@@ -122,8 +123,8 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <RevealModule reveal={insights.reveal} />
           <ObservationsModule observations={insights.observations} />
+          <RevealModule reveal={insights.reveal} />
           <NextActionsModule actions={insights.nextActions} />
         </ScrollView>
       </SafeAreaView>
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#7fa6a6",
+    color: "#fff",
     fontFamily: "Quicksand_500Medium",
   },
   errorContainer: {
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#ff6b6b",
+    color: "#fff",
     textAlign: "center",
     fontFamily: "Quicksand_500Medium",
   },
