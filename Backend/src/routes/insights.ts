@@ -76,6 +76,7 @@ router.get("/", async (_req, res) => {
       })
       .join("\n\n");
 
+    // TODO: ai should talk in second person to the user
     // Generate insights using OpenAI
     const systemPrompt = `You are a wellness coach analyzing conversation history to generate personalized insights. 
     
