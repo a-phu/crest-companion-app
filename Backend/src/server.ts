@@ -38,5 +38,4 @@ app.get('/__debug/routes', (_req, res) => {
 // 404 MUST be last
 app.use((req, res) => res.status(404).json({ error: 'Not Found', path: req.originalUrl }));
 
-const port = Number(process.env.PORT || 8080);
-app.listen(port, () => console.log(`API listening on http://localhost:${port}`));
+export default app;
