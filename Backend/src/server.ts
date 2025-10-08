@@ -7,6 +7,7 @@ import chat from './routes/chat';
 import debugRoutes from './routes/debug';   // ← add this
 import insights from './routes/insights';
 
+import program from './routes/programs'; // <- if you have a programs route
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -20,6 +21,8 @@ app.use('/api/messages', messages);
 app.use('/api/chat', chat);
 app.use('/api/debug', debugRoutes);         // ← mount here
 app.use('/api/insights', insights);
+app.use('/api/debug', debugRoutes);
+app.use('api/programs', program); // <- if you have a programs route
 
 // optional: route inspector to confirm what's mounted
 app.get('/__debug/routes', (_req, res) => {

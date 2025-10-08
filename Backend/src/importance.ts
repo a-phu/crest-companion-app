@@ -1,53 +1,193 @@
-// backend/src/lib/importance.ts
-import { openai } from './OpenaiClient';
+// // backend/src/importance.ts
+// import { openai } from "./OpenaiClient";
+// import { IMPORTANCE_PROMPT } from "./prompts";
 
-export type ImportanceResult = { important: boolean; reason?: string };
+// /** Allowed agent types in your app */
+// export const AGENT_TYPES = [
+//   "Cognition",
+//   "Identity",
+//   "Mind",
+//   "Clinical",
+//   "Nutrition",
+//   "Training",
+//   "Body",
+//   "Sleep",
+//   "other",
+// ] as const;
 
+// export type AgentType = typeof AGENT_TYPES[number];
+
+// export type ImportanceResult = {
+//   important: boolean;
+//   agent_type: AgentType; // one of AGENT_TYPES
+//   reason?: string;
+// };
+
+// /** Runtime guard to coerce/validate agent_type coming back from the model */
+// function normalizeAgentType(value: unknown): AgentType {
+//   if (typeof value !== "string") return "other";
+//   // Accept exact match or case-insensitive match
+//   const ix = AGENT_TYPES.findIndex(
+//     (t) => t.toLowerCase() === value.toLowerCase()
+//   );
+//   return ix >= 0 ? AGENT_TYPES[ix] : "other";
+// }
+
+// /**
+//  * Classify a single message for importance + agent_type.
+//  * No heuristics. The model is instructed to map the content to exactly one agent.
+//  */
+// export async function classifyImportance(content: string): Promise<ImportanceResult> {
+//   const input = (content ?? "").slice(0, 2000);
+
+//   const sys =
+//     `You are an assistant that classifies ONE chat message.\n` +
+//     `Return ONLY strict JSON with keys: important (boolean), agent_type (string), reason (string).\n` +
+//     `agent_type MUST be EXACTLY one of:\n` +
+//     `${AGENT_TYPES.join(", ")}\n\n` +
+//     `Guidance for mapping:\n` +
+//     `- Training: workout programming, sets/reps, exercise selection, progression, plans.\n` +
+//     `- Nutrition: meals, calories, macros, protein, hydration, diet adjustments.\n` +
+//     `- Clinical: injuries, pain, illness, surgery, medications, medical cautions.\n` +
+//     `- Body: body composition, measurements, weight changes, soreness (non-clinical), recovery protocols.\n` +
+//     `- Sleep: sleep duration/quality, routines, insomnia, jet lag.\n` +
+//     `- Mind: stress management, emotions, mindset, motivation tactics.\n` +
+//     `- Cognition: focus, attention, memory, mental clarity and performance.\n` +
+//     `- Identity: goals/values, self-narrative, long-term identity shifts.\n` +
+//     `- other: anything that does not cleanly fit above.\n\n` +
+//     `Mark important=true if the message should affect future coaching decisions (e.g., new plan, change of constraints, health issues, strong blockers, deadlines).\n` +
+//     `Keep reason ≤ 15 words.`; // short reason for logs
+
+//   try {
+//     // const completion = await openai.chat.completions.create({
+//     //   model: "gpt-4o-mini",
+//     //   response_format: { type: "json_object" },
+//     //   messages: [
+//     //     { role: "system", content: sys },
+//     //     { role: "user", content: input },
+//     //   ],
+//     //   // no temperature here to keep it deterministic
+//     // });
+//       const completion = await openai.chat.completions.create({
+//       model: "gpt-4o-mini",
+//       response_format: { type: "json_object" },
+//       messages: [
+//         { role: "system", content: IMPORTANCE_PROMPT },
+//         { role: "user", content: input },
+//       ],
+//     });
+
+    
+
+//     const raw = completion.choices?.[0]?.message?.content ?? "{}";
+//     const parsed = JSON.parse(raw);
+
+//     const important = !!parsed?.important;
+//     const agent_type = normalizeAgentType(parsed?.agent_type);
+//     const reason =
+//       typeof parsed?.reason === "string"
+//         ? String(parsed.reason).slice(0, 120)
+//         : "no reason given";
+
+//     return { important, agent_type, reason };
+//   } catch (err) {
+//     console.error("AI importance classification failed", err);
+//     // Minimal fallback: default to "other"
+//     return {
+//       important: false,
+//       agent_type: "other",
+//       reason: "fallback",
+//     };
+//   }
+// }
+
+// export default classifyImportance;
+// backend/src/importance.ts
+// import { openai } from "./OpenaiClient";
+// import { IMPORTANCE_PROMPT } from "./prompts";
+// import { AGENT_TYPES, AgentType, normalizeAgentType } from "./agents";
+
+// export type ImportanceResult = {
+//   important: boolean;
+//   agent_type: AgentType;
+//   reason?: string;
+// };
+
+// export async function classifyImportance(content: string): Promise<ImportanceResult> {
+//   const input = (content ?? "").slice(0, 2000);
+
+//   try {
+//     const completion = await openai.chat.completions.create({
+//       model: "gpt-4o-mini",
+//       response_format: { type: "json_object" },
+//       messages: [
+//         { role: "system", content: IMPORTANCE_PROMPT },
+//         { role: "user", content: input },
+//       ],
+//     });
+
+//     const raw = completion.choices?.[0]?.message?.content ?? "{}";
+//     const parsed = JSON.parse(raw);
+
+//     const important = !!parsed?.important;
+//     const agent_type = normalizeAgentType(parsed?.agent_type);
+//     const reason =
+//       typeof parsed?.reason === "string" ? String(parsed.reason).slice(0, 120) : "no reason given";
+
+//     return { important, agent_type, reason };
+//   } catch (err) {
+//     console.error("AI importance classification failed", err);
+//     return { important: false, agent_type: "other", reason: "fallback" };
+//   }
+// }
+
+// export default classifyImportance;
+// backend/src/importance.ts
+import { openai } from "./OpenaiClient";
+import { IMPORTANCE_PROMPT } from "./prompts";
+import { AGENT_TYPES, type AgentType } from "./agents";
+
+export type ImportanceResult = {
+  important: boolean;
+  agent_type: AgentType; // one of AGENT_TYPES
+  reason?: string;
+};
+
+/** Coerce/validate agent_type coming back from the model */
+function normalizeAgentType(value: unknown): AgentType {
+  if (typeof value !== "string") return "other";
+  const ix = AGENT_TYPES.findIndex((t) => t.toLowerCase() === value.toLowerCase());
+  return ix >= 0 ? AGENT_TYPES[ix] : "other";
+}
+
+/** Classify a single message for importance + agent_type (strict JSON). */
 export async function classifyImportance(content: string): Promise<ImportanceResult> {
-  const input = (content ?? '').slice(0, 2000);
-  const sys =
-    'You are a classifier for coaching chats. Output only JSON.\n' +
-    'An incoming message is important iff it will change future coaching decisions:\n' +
-    '1) Plan creation/updates\n' +
-    '2) Circumstance changes (schedule/time/location, travel, equipment)\n' +
-    '3) Health changes (injury, acute pain, illness, surgery, pregnancy, meds)\n' +
-    '4) Deadlines/events\n' +
-    '5) Adherence blockers\n' +
-    '6) Urgent/time-sensitive needs\n' +
-    'Return: {"important": boolean, "reason": string} (reason ≤ 15 words). Output JSON only.';
-
+  const input = (content ?? "").slice(0, 2000);
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0,
-      response_format: { type: 'json_object' },
-      max_tokens: 80,
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
       messages: [
-        { role: 'system', content: sys },
-        { role: 'user', content: input }
+        { role: "system", content: IMPORTANCE_PROMPT },
+        { role: "user", content: input },
       ],
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? '{}';
+    const raw = completion.choices?.[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(raw);
+
     const important = !!parsed?.important;
+    const agent_type = normalizeAgentType(parsed?.agent_type);
     const reason =
-      typeof parsed?.reason === 'string' ? String(parsed.reason).slice(0, 120) : undefined;
+      typeof parsed?.reason === "string"
+        ? String(parsed.reason).slice(0, 120)
+        : "no reason given";
 
-    return { important, reason };
-  } catch {
-    const t = input.toLowerCase();
-    const important =
-      /\b(plan|program|schedule|routine)\b.*\b(update|change|revise|new)\b/.test(t) ||
-      /\b(travel|flight|hotel|moving|schedule|shift|gym|equipment)\b/.test(t) ||
-      /\b(injury|pain|sprain|fracture|surgery|ill|covid|pregnan|medicat|seizure|epilep|stroke|heart attack|fainted|emergency|er|a&e)\b/.test(t) ||
-      /\b(race|meet|competition|deadline|exam|event)\b/.test(t) ||
-      /\b(missed|skipped|burn(ed)? out|can'?t complete|blocked)\b/.test(t) ||
-      /\b(urgent|asap|today|tomorrow|need.*now)\b/.test(t);
-
-    return { important, reason: 'fallback' };
+    return { important, agent_type, reason };
+  } catch (err) {
+    console.error("AI importance classification failed", err);
+    return { important: false, agent_type: "other", reason: "fallback" };
   }
 }
 
-// Export default too so either `import { classifyImportance }` or `import classifyImportance` works
 export default classifyImportance;
