@@ -1,10 +1,18 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  View,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import CrestAppBar from "../components/CrestAppBar";
 import ObservationsModule from "../components/insights/ObservationsModule";
 import RevealModule from "../components/insights/RevealModule";
 import NextActionsModule from "../components/insights/NextActionsModule";
+import api from "../scripts/axiosClient";
 import {
   useFonts,
   Quicksand_300Light,
@@ -13,7 +21,30 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const InsightsScreen = () => {
+type InsightsData = {
+  observations: {
+    cognition: string;
+    identity: string;
+    mind: string;
+    clinical: string;
+    nutrition: string;
+    training: string;
+    body: string;
+    sleep: string;
+  };
+  nextActions: Array<{
+    title: string;
+    text: string;
+  }>;
+  reveal: string;
+};
+
+const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
+  const [insights, setInsights] = useState<InsightsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -21,9 +52,66 @@ const InsightsScreen = () => {
     Quicksand_600SemiBold,
   });
 
+  const fetchInsights = useCallback(async () => {
+    try {
+      if (!refreshing) setLoading(true);
+      const response = await api.get("/insights");
+      setInsights(response.data);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to fetch insights:", err);
+      setError("Failed to load insights. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [refreshing]);
+
+  useEffect(() => {
+    console.log(`isVisible ${isVisible}`);
+    if (isVisible && fontsLoaded) {
+      fetchInsights();
+    }
+  }, [isVisible, fontsLoaded, fetchInsights]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchInsights();
+  }, [fetchInsights]);
+
   if (!fontsLoaded) {
-    return <Text>Loading...</Text>;
+    return <Text>Loading fonts...</Text>;
   }
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <CrestAppBar heading={"Prepare"} />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text style={styles.loadingText}>Generating your insights...</Text>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (error || !insights) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <CrestAppBar heading={"Prepare"} />
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              {error || "Unable to load insights"}
+            </Text>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -31,10 +119,13 @@ const InsightsScreen = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
-          <ObservationsModule />
-          <RevealModule />
-          <NextActionsModule />
+          <ObservationsModule observations={insights.observations} />
+          <RevealModule reveal={insights.reveal} />
+          <NextActionsModule actions={insights.nextActions} />
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -53,5 +144,29 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     flex: 1,
     gap: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#fff",
+    fontFamily: "Quicksand_500Medium",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#fff",
+    textAlign: "center",
+    fontFamily: "Quicksand_500Medium",
   },
 });

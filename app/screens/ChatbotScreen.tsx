@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Platform,
   Text,
+  ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import ChatInput from "../components/chat/ChatInput";
@@ -25,7 +27,8 @@ import api from "../scripts/axiosClient";
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const ChatbotScreen = () => {
-  const [text, setText] = React.useState("");
+  const [loading, setLoading] = useState(false);
+
   const [messages, setMessages] = useState<Message[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -37,7 +40,10 @@ const ChatbotScreen = () => {
   // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (message: string): Promise<string> => {
     try {
-      const response = await api.post("/chat", { text: message });
+      const response = await api.post(
+        "/chat/b9576a32-334b-4444-866e-4ec176d377ff",
+        { text: message }
+      );
       return response.data.reply;
     } catch (error) {
       console.error("Error sending message:", error);
@@ -61,17 +67,19 @@ const ChatbotScreen = () => {
 
     // TODO: add styling to “typing…” placeholder
     const typingId = genId();
+
     setMessages((prev) => [
       ...prev,
       {
         id: typingId,
         role: "assistant",
-        content: "…", // or "Assistant is typing"
+        content: "", // or "Assistant is typing"
         createdAt: Date.now(),
       },
     ]);
 
     try {
+      setLoading(true);
       const reply = await fetchAssistantReply(trimmed);
 
       // Replace the typing bubble with the real reply
@@ -94,6 +102,8 @@ const ChatbotScreen = () => {
             : m
         )
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,6 +135,13 @@ const ChatbotScreen = () => {
                 <ChatBubble key={item.id} msg={item} />
               ))}
             </ScrollView>
+          )}
+          {loading && (
+            <View
+              style={{ padding: 10, alignItems: "center", marginBottom: 250 }}
+            >
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
           )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
         </KeyboardAvoidingView>

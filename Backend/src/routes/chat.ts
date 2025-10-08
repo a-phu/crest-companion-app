@@ -1289,7 +1289,10 @@ function attachTimingHeaders(res: Response, profile: Array<{ step: string; ms: n
     const total = profile.find((p) => p.step === "TOTAL")?.ms ?? 0;
     const serverTiming = profile
       .filter((p) => p.step !== "TOTAL")
-      .map((p) => `${p.step.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60)};dur=${p.ms.toFixed(1)}`)
+      .map(
+        (p) =>
+          `${p.step.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60)};dur=${p.ms.toFixed(1)}`
+      )
       .join(", ");
     if (serverTiming) res.setHeader("Server-Timing", serverTiming);
     res.setHeader("X-Chat-Total-MS", String(total.toFixed(1)));
@@ -1320,7 +1323,9 @@ async function classifyWithRetry(
       const t0 = process.hrtime.bigint();
       const r = await classifyImportance(text);
       const t1 = process.hrtime.bigint();
-      P.mark(`classify_${label}_done_retry`, { ms_inner: Number(t1 - t0) / 1_000_000 });
+      P.mark(`classify_${label}_done_retry`, {
+        ms_inner: Number(t1 - t0) / 1_000_000,
+      });
       return r;
     } catch {
       P.mark(`classify_${label}_failed`);
@@ -1481,7 +1486,9 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
   const q0 = process.hrtime.bigint();
   const recentQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -1501,7 +1508,9 @@ async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseConte
   const q2 = process.hrtime.bigint();
   const impQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -1556,7 +1565,9 @@ async function fetchRagSlice(
   const r0 = process.hrtime.bigint();
   const ragQ = await supa
     .from("message")
-    .select("message_id,sender_id,receiver_id,content,is_important,created_at,agent_type")
+    .select(
+      "message_id,sender_id,receiver_id,content,is_important,created_at,agent_type"
+    )
     .or(
       `and(sender_id.eq.${humanId},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${humanId})`
@@ -1631,7 +1642,9 @@ router.post("/:humanId", async (req, res) => {
       .update({ is_important: userImp.important, agent_type: userImp.agent_type })
       .eq("message_id", ins0.data!.message_id)
       .then(({ error }) =>
-        error ? P.mark("user_update_error", { error: error.message }) : P.mark("user_update_ok")
+        error
+          ? P.mark("user_update_error", { error: error.message })
+          : P.mark("user_update_ok")
       );
 
     // 3) RAG-lite slice
@@ -1658,14 +1671,20 @@ router.post("/:humanId", async (req, res) => {
     if ((intent.should_create && inferredAgent === "Training") || userImp.agent_type === "Training") {
       systemPrompt += TRAINING_PROGRAM_GUIDE;
     }
-    const messages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...ctx];
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...ctx,
+    ];
     const b1 = process.hrtime.bigint();
-    P.mark("build_prompt", { total_msgs: messages.length, ms_inner: Number(b1 - b0) / 1_000_000 });
+    P.mark("build_prompt", {
+      total_msgs: messages.length,
+      ms_inner: Number(b1 - b0) / 1_000_000,
+    });
 
     // 6) Model call for the assistant reply
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-nano",
       temperature: 0.3,
       max_tokens: 1000,
       messages,
@@ -1707,7 +1726,8 @@ router.post("/:humanId", async (req, res) => {
           .from("message")
           .update({ is_important: aiImp.important, agent_type: aiImp.agent_type })
           .eq("message_id", ins1.data!.message_id);
-        if (upd1.error) P.mark("update_ai_msg_error", { error: upd1.error.message });
+        if (upd1.error)
+          P.mark("update_ai_msg_error", { error: upd1.error.message });
         else P.mark("update_ai_msg_ok");
       } catch (e: any) {
         P.mark("post_response_pipeline_error", { error: e?.message });
@@ -1715,7 +1735,9 @@ router.post("/:humanId", async (req, res) => {
     })();
   } catch (err: any) {
     const profile = P.report();
-    console.error(JSON.stringify({ reqId: P.id, error: err?.message, profile }, null, 2));
+    console.error(
+      JSON.stringify({ reqId: P.id, error: err?.message, profile }, null, 2)
+    );
     res.status(500).json({ error: err?.message || "unknown error" });
   }
 });
