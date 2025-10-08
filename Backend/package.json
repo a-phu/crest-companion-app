@@ -13,7 +13,9 @@
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "openai": "^6.2.0",
     "react-native-url-polyfill": "^2.0.0"
   }
 }

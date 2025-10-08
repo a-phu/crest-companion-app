@@ -9,26 +9,39 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const observations = [
-  {
-    title: "Sleep",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Nutrition",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Mood",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-  {
-    title: "Cognition",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-  },
-];
+interface ObservationsModuleProps {
+  observations?: {
+    cognition: string;
+    identity: string;
+    mind: string;
+    clinical: string;
+    nutrition: string;
+    training: string;
+    body: string;
+    sleep: string;
+  };
+}
 
-const ObservationsModule: React.FC = () => {
+const ObservationsModule: React.FC<ObservationsModuleProps> = ({ observations: observationsData }) => {
+  const observations = observationsData ? [
+    { title: "Cognition", text: observationsData.cognition },
+    { title: "Identity", text: observationsData.identity },
+    { title: "Mind", text: observationsData.mind },
+    { title: "Clinical", text: observationsData.clinical },
+    { title: "Nutrition", text: observationsData.nutrition },
+    { title: "Training", text: observationsData.training },
+    { title: "Body", text: observationsData.body },
+    { title: "Sleep", text: observationsData.sleep },
+  ] : [
+    { title: "Cognition", text: "Loading cognition insights..." },
+    { title: "Identity", text: "Loading identity insights..." },
+    { title: "Mind", text: "Loading mind insights..." },
+    { title: "Clinical", text: "Loading clinical insights..." },
+    { title: "Nutrition", text: "Loading nutrition insights..." },
+    { title: "Training", text: "Loading training insights..." },
+    { title: "Body", text: "Loading body insights..." },
+    { title: "Sleep", text: "Loading sleep insights..." },
+  ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -77,11 +90,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
   },
   card: {
     width: "48%",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   cardTitle: {
     marginBottom: 4,
