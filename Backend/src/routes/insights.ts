@@ -16,7 +16,7 @@ router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'insights' }));
  */
 router.get('/', async (_req, res) => {
   try {
-    // Get conversation history from last 30 days, prioritizing important messages
+    // Get conversation history from last 30 days, only important messages
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -27,6 +27,7 @@ router.get('/', async (_req, res) => {
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
         `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
+      .eq('is_important', true)
       .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: true });
 
