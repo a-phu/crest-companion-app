@@ -1,5 +1,5 @@
 // backend/src/routes/insights.ts
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { supa } from '../supabase';
 import { HUMAN_ID, AI_ID } from '../id';
 import { openai } from '../OpenaiClient';
@@ -11,10 +11,72 @@ router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'insights' }));
 
 /**
  * GET /api/insights
- * Analyzes recent conversation history to generate personalized wellness insights
- * Returns structured data for ObservationsModule, NextActionsModule, and RevealModule
+ * Returns cached wellness insights from database
+ * If no cached insights exist, returns default insights
  */
 router.get('/', async (_req, res) => {
+  try {
+    // Get the most recent cached insights for the user
+    const { data: cachedInsights, error: insightsError } = await supa
+      .from('insights')
+      .select('insights_data, generated_at')
+      .eq('user_id', HUMAN_ID)
+      .eq('is_cached', true)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (insightsError && insightsError.code !== 'PGRST116') {
+      throw insightsError;
+    }
+
+    // If we have cached insights, return them
+    if (cachedInsights) {
+      return res.json(cachedInsights.insights_data);
+    }
+
+    // If no cached insights, return default insights
+    return res.json({
+      observations: {
+        cognition: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
+        identity: "Tell me about your personal goals and values to understand your identity and purpose.",
+        mind: "Discuss your mental health, stress levels, and emotional wellbeing patterns.",
+        clinical: "Share any health concerns, symptoms, or medical observations for clinical insights.",
+        nutrition: "Tell me about your meals and eating habits to get personalized nutrition insights.",
+        training: "Describe your exercise routines and physical activity to optimize your training.",
+        body: "Share how your body feels, energy levels, and physical sensations throughout the day.",
+        sleep: "Start tracking your sleep patterns by sharing how you feel each morning."
+      },
+      nextActions: [
+        {
+          title: "Start Your Holistic Assessment",
+          text: "Begin by sharing your current sleep schedule, energy levels, and how you typically feel throughout the day."
+        },
+        {
+          title: "Define Your Goals",
+          text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving."
+        }
+      ],
+      reveal: "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."
+    });
+
+  } catch (e: any) {
+    console.error('Error retrieving insights:', e);
+    res.status(500).json({ 
+      error: 'Failed to retrieve insights',
+      details: e.message || 'unknown error' 
+    });
+  }
+});
+
+/**
+ * POST /api/insights/generate
+ * Generates new insights based on important messages and stores them in database
+ * Called automatically when important messages are detected in chat
+ */
+router.post('/generate', async (_req: Request, res: Response) => {
+  const startTime = Date.now();
+  
   try {
     // Get conversation history from last 30 days, only important messages
     const thirtyDaysAgo = new Date();
@@ -33,38 +95,39 @@ router.get('/', async (_req, res) => {
 
     if (error) throw error;
 
+    // If no important messages, don't generate insights
     if (!messages || messages.length === 0) {
-      // Return default insights if no conversation history
-      return res.json({
-        observations: {
-          cognition: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
-          identity: "Tell me about your personal goals and values to understand your identity and purpose.",
-          mind: "Discuss your mental health, stress levels, and emotional wellbeing patterns.",
-          clinical: "Share any health concerns, symptoms, or medical observations for clinical insights.",
-          nutrition: "Tell me about your meals and eating habits to get personalized nutrition insights.",
-          training: "Describe your exercise routines and physical activity to optimize your training.",
-          body: "Share how your body feels, energy levels, and physical sensations throughout the day.",
-          sleep: "Start tracking your sleep patterns by sharing how you feel each morning."
-        },
-        nextActions: [
-          {
-            title: "Start Your Holistic Assessment",
-            text: "Begin by sharing your current sleep schedule, energy levels, and how you typically feel throughout the day."
-          },
-          {
-            title: "Define Your Goals",
-            text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving."
-          }
-        ],
-        reveal: "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."
+      return res.json({ 
+        message: 'No important messages found, insights not generated',
+        generated: false 
+      });
+    }
+
+    // Create conversation hash for caching
+    const conversationHash = require('crypto')
+      .createHash('sha256')
+      .update(messages.map(m => m.id + m.content).join(''))
+      .digest('hex');
+
+    // Check if we already have insights for this exact conversation
+    const { data: existingInsights } = await supa
+      .from('insights')
+      .select('id')
+      .eq('user_id', HUMAN_ID)
+      .eq('conversation_hash', conversationHash)
+      .single();
+
+    if (existingInsights) {
+      return res.json({ 
+        message: 'Insights already generated for this conversation',
+        generated: false 
       });
     }
 
     // Prepare conversation context for AI analysis
     const conversationContext = messages.map(msg => {
       const isUser = msg.sender_id === HUMAN_ID;
-      const importance = msg.is_important ? ' [IMPORTANT]' : '';
-      return `${isUser ? 'User' : 'Assistant'}${importance}: ${msg.content}`;
+      return `${isUser ? 'User' : 'Assistant'}: ${msg.content}`;
     }).join('\n\n');
 
     // Generate insights using OpenAI
@@ -127,7 +190,41 @@ Return ONLY valid JSON.`;
       throw new Error('Invalid insights response structure');
     }
 
-    res.json(insights);
+    const generationTime = Date.now() - startTime;
+    const tokensUsed = completion.usage?.total_tokens || 0;
+
+    // Delete any existing insights for this user
+    await supa
+      .from('insights')
+      .delete()
+      .eq('user_id', HUMAN_ID);
+
+    // Store new insights in database
+    const { error: insertError } = await supa
+      .from('insights')
+      .insert({
+        user_id: HUMAN_ID,
+        insights_data: insights,
+        message_count_at_generation: messages.length,
+        important_message_count: messages.length, // All messages are important since we filtered
+        conversation_hash: conversationHash,
+        is_cached: true,
+        generation_time_ms: generationTime,
+        ai_tokens_used: tokensUsed
+      });
+
+    if (insertError) {
+      console.error('Error storing insights:', insertError);
+      // Still return the insights even if storage failed
+    }
+
+    res.json({ 
+      message: 'Insights generated and cached successfully',
+      generated: true,
+      insights,
+      generationTime,
+      tokensUsed
+    });
 
   } catch (e: any) {
     console.error('Insights generation error:', e);
