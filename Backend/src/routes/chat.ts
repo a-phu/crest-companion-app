@@ -1,4 +1,4 @@
-/// backend/src/routes/chat.ts
+// backend/src/routes/chat.ts
 import { Router, type Response } from "express";
 import { supa } from "../supabase";
 import { openai } from "../OpenaiClient";
