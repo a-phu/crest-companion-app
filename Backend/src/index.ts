@@ -11,8 +11,10 @@ const port = Number(process.env.PORT || 8080);
 // - If PORT is set in .env, use that
 // - Otherwise default to 8080
 
-const server = app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`API listening on http://0.0.0.0:${port}`);
+  console.log(`Local: http://localhost:${port}`);
+  console.log(`Network: http://192.168.1.103:${port}`);
 });
 // Start the HTTP server and begin listening for requests
 // The callback runs once the server is live, logging a message
