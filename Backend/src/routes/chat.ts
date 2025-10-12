@@ -1,4 +1,4 @@
-/// backend/src/routes/chat.ts
+// backend/src/routes/chat.ts
 import { Router, type Response } from "express";
 import { supa } from "../supabase";
 import { openai } from "../OpenaiClient";
@@ -7,11 +7,11 @@ import { classifyImportance, type ImportanceResult } from "../importance";
 import { Profiler } from "../profiler";
 import { BASE_SYSTEM_PROMPT, TRAINING_PROGRAM_GUIDE, PROGRAM_INTENT_PROMPT } from "../prompts";
 import { AgentType, agentToProgramType, isProgramCapable } from "../agents";
-import { buildProgramDaysNoKinds } from "../programdays";
+// Use the universal generator only (returns { metadata, days })
+import { buildProgramDaysUniversal } from "../universalProgram";
 
-// -----------------------------
-// Types
-// -----------------------------
+const router = Router();
+
 type MessageRow = {
   message_id: string;
   sender_id: string;
@@ -19,7 +19,7 @@ type MessageRow = {
   content: string;
   is_important?: boolean | null;
   created_at: string; // ISO
-  agent_type?: string | null; // canonical AgentType string or "other"
+  agent_type?: string | null;
 };
 
 type ChatMessage =
@@ -27,22 +27,19 @@ type ChatMessage =
   | { role: "user"; content: string }
   | { role: "assistant"; content: string };
 
-// Intent payload from the model
 type IntentParsed = {
-  start_date?: string | null;     // YYYY-MM-DD (optional)
-  duration_weeks?: number | null; // optional
-  days_per_week?: number | null;  // optional
-  modalities?: string[] | null;   // optional (e.g., ["BJJ","Muay Thai"])
+  start_date?: string | null;     // YYYY-MM-DD
+  duration_weeks?: number | null;
+  days_per_week?: number | null;
+  modalities?: string[] | null;
 };
 
 type IntentResult = {
   should_create: boolean;
-  confidence: number;     // 0..1
-  agent: AgentType;       // canonical agent string
+  confidence: number; // 0..1
+  agent: AgentType;
   parsed?: IntentParsed;
 };
-
-const router = Router();
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -110,7 +107,6 @@ async function assertHuman(humanId: string): Promise<void> {
   }
 }
 
-// Normalize a free-form intent value to your canonical AgentType
 function normalizeAgentFromIntent(v: unknown): AgentType {
   const t = String(v || "").toLowerCase();
   if (t === "training") return "Training";
@@ -124,7 +120,7 @@ function normalizeAgentFromIntent(v: unknown): AgentType {
   return "other";
 }
 
-// --- AI: detect program intent (STRICT JSON; agent-only worldview) ---
+// --- AI: detect program intent (STRICT JSON) ---
 async function detectProgramIntent(text: string, P: Profiler): Promise<IntentResult> {
   const u = (text ?? "").slice(0, 2000);
   const t0 = process.hrtime.bigint();
@@ -147,15 +143,18 @@ async function detectProgramIntent(text: string, P: Profiler): Promise<IntentRes
     parsed = {};
   }
 
+  // helpful for debugging weird dates
+  P.mark("intent_raw", { parsed });
+
   return {
     should_create: !!parsed?.should_create,
     confidence: Math.max(0, Math.min(1, Number(parsed?.confidence || 0))),
-    agent: normalizeAgentFromIntent(parsed?.program_type),
+    agent: normalizeAgentFromIntent(parsed?.agent_type),
     parsed: parsed?.parsed || {},
   };
 }
 
-// ---- Create a program using AGENT TYPE (no kinds) & LLM-generated days ----
+// ---- Create a program using AGENT TYPE & Universal generator (metadata + days) ----
 async function createProgramFromIntent(
   userId: string,
   rawRequest: string,
@@ -165,7 +164,7 @@ async function createProgramFromIntent(
 ): Promise<string | null> {
   if (!isProgramCapable(agent)) return null;
 
-  // Debounce: skip if a very recent active/scheduled program of same internal type exists
+  // Debounce: avoid dupes in a short window
   const internalType = agentToProgramType(agent, "v1"); // e.g., "training.v1"
   const recent = await supa
     .from("program")
@@ -175,6 +174,7 @@ async function createProgramFromIntent(
     .in("status", ["active", "scheduled"])
     .order("created_at", { ascending: false })
     .limit(1);
+
   if (!recent.error && recent.data?.length) {
     const last = recent.data[0];
     const createdMs = new Date(last.created_at).getTime();
@@ -183,50 +183,90 @@ async function createProgramFromIntent(
     }
   }
 
-  // Dates
-  const start = parsed?.start_date ? new Date(parsed.start_date) : new Date();
-  const startISO = start.toISOString().slice(0, 10);
-  const weeks = Math.max(1, Math.min(12, Math.floor(parsed?.duration_weeks ?? 2)));
-  const end = new Date(start);
-  end.setDate(end.getDate() + weeks * 7 - 1);
-  const endISO = end.toISOString().slice(0, 10);
+  // --- Sanitize intent fields ---
+  const TODAY = new Date();
+  const toISO = (d: Date) => d.toISOString().slice(0, 10);
 
-  // Insert program shell
+  // 1) Safe start_date: accept only if within [-3, +60] days from today
+  let start = TODAY;
+  if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
+    const cand = new Date(parsed.start_date);
+    const diffDays = Math.round((cand.getTime() - TODAY.getTime()) / 86400000);
+    if (diffDays >= -3 && diffDays <= 60) {
+      start = cand;
+    }
+  }
+  const startISO = toISO(start);
+
+  // 2) Safe duration_weeks: clamp 1..12; if user clearly supplied days_per_week,
+  // don't let a stray huge duration override defaults.
+  const hasDaysPerWeek = Number.isFinite(Number(parsed?.days_per_week));
+  let weeksRaw = Number(parsed?.duration_weeks);
+  if (!Number.isFinite(weeksRaw)) weeksRaw = 4;
+  if (hasDaysPerWeek && weeksRaw > 8) weeksRaw = 4;
+  const weeksHint = Math.max(1, Math.min(12, Math.floor(weeksRaw)));
+
+  // 3) days_per_week: clamp 1..7 (prefer what user said)
+  const daysPerWeek = Math.max(1, Math.min(7, Number(parsed?.days_per_week ?? 5)));
+
+  const status = start <= TODAY ? "active" : "scheduled";
+
+  // 1) Generate FIRST so we can size by actual output length
+  const gen = await buildProgramDaysUniversal({
+    plan_type: agent ?? null, // hint only
+    weeks: weeksHint,         // hint; we size by gen.days length
+    request_text: rawRequest || "",
+    hints: {
+      days_per_week: daysPerWeek,
+      modalities: parsed?.modalities ?? null,
+      goals: null,
+      constraints: null
+    }
+  });
+
+  const daysArray = Array.isArray(gen?.days) ? gen.days : [];
+  if (daysArray.length === 0) {
+    throw new Error("Generator returned 0 days.");
+  }
+
+  // 2) Size end date & weeks from actual length
+  const end = new Date(start);
+  end.setDate(end.getDate() + (daysArray.length - 1));
+  const endISO = toISO(end);
+  const normalizedWeeks = Math.max(1, Math.ceil(daysArray.length / 7));
+
+  // 3) Create program shell sized by generator output
   const { data: prog, error: progErr } = await supa
     .from("program")
     .insert({
       user_id: userId,
       type: internalType,
-      status: "active",
+      status,
       start_date: startISO,
       end_date: endISO,
-      period_length_weeks: weeks,
-      spec_json: { source: "chat", raw_request: rawRequest },
+      period_length_weeks: normalizedWeeks,
+      spec_json: {
+        source: "chat",
+        raw_request: rawRequest,
+        agent,
+        modalities: parsed?.modalities?.length ? parsed.modalities : ["General"],
+        days_per_week: daysPerWeek,
+        constraints: [],
+        goals: [],
+        spec_version: 1
+      }
     })
     .select("program_id")
     .single();
   if (progErr) throw progErr;
 
-  // Build days via LLM (no "kind"); size = weeks*7
-  const days = await buildProgramDaysNoKinds(
-    {
-      agent,
-      weeks,
-      hints: {
-        days_per_week: parsed?.days_per_week ?? null,
-        modalities: parsed?.modalities ?? null,
-      },
-    },
-    P
-  );
-
-  // Save period
+  // 4) Save first period EXACTLY as returned ({ metadata, days })
   const { error: perErr } = await supa.from("program_period").insert({
     program_id: prog.program_id,
     period_index: 0,
     start_date: startISO,
     end_date: endISO,
-    period_json: { days },
+    period_json: gen, // { metadata, days }
   });
   if (perErr) throw perErr;
 
@@ -480,8 +520,8 @@ router.post("/:humanId", async (req, res) => {
       }
     })();
   } catch (err: any) {
-    const profile = P.report();
-    console.error(JSON.stringify({ reqId: P.id, error: err?.message, profile }, null, 2));
+    const profile = new Profiler().report(); // ensure we always respond
+    console.error(JSON.stringify({ error: err?.message, profile }, null, 2));
     res.status(500).json({ error: err?.message || "unknown error" });
   }
 });
