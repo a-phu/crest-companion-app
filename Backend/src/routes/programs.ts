@@ -1,7 +1,7 @@
 // backend/src/routes/programs.ts
 import { Router } from "express";
 import { supa } from "../supabase";
-import { buildProgramDaysUniversal } from "../universalProgram";
+import { buildProgramDaysUniversal, normalizeLength } from "../universalProgram";
 import period from "../program/period";
 
 const router = Router();
@@ -100,6 +100,70 @@ function evenlySpread(arr: number[], n: number): number[] {
     if (!picks.includes(v)) picks.push(v);
   }
   return picks.slice(0, n);
+}
+
+/* ---------------- NEW: helper to append a period forward-only ---------------- */
+async function appendPeriodToCover(
+  programId: string,
+  startISO: string,
+  weeksHint: number,
+  spec: any,
+  exactDays?: number // NEW: allow exact day count
+) {
+  // 1) decide target length
+  const targetDays = Math.max(1, exactDays ?? weeksHint * 7);
+
+  // 2) generate (use ceil in case targetDays isn't multiple of 7)
+  const gen = await buildProgramDaysUniversal({
+    plan_type: spec?.agent ?? null,
+    weeks: Math.ceil(targetDays / 7),
+    request_text: spec?.raw_request || "Extend program horizon.",
+    hints: {
+      days_per_week: spec?.days_per_week ?? 5,
+      modalities: spec?.modalities ?? ["General"],
+      goals: spec?.goals ?? [],
+      constraints: spec?.constraints ?? [],
+    },
+  });
+
+  const daysArray = Array.isArray(gen?.days) ? gen.days : [];
+  if (daysArray.length === 0) throw new Error("Generator returned 0 days.");
+
+  // 3) force exact length, then space
+  const normalized = normalizeLength(daysArray, targetDays, spec?.agent ?? "Training");
+  const spacedDays = enforceDaysPerWeek(
+    normalized,
+    startISO,
+    spec?.days_per_week ?? 5,
+    (spec as any)?.training_days ?? null
+  );
+
+  // 4) compute end date by actual saved length
+  const newEnd = new Date(startISO);
+  newEnd.setDate(newEnd.getDate() + (spacedDays.length - 1));
+  const newEndISO = newEnd.toISOString().slice(0, 10);
+
+  // 5) next period index
+  const { data: existing, error: exErr } = await supa
+    .from("program_period")
+    .select("period_index")
+    .eq("program_id", programId)
+    .order("period_index", { ascending: false })
+    .limit(1);
+  if (exErr) throw exErr;
+  const nextIndex = (existing?.[0]?.period_index ?? -1) + 1;
+
+  // 6) insert
+  const { error: insErr } = await supa.from("program_period").insert({
+    program_id: programId,
+    period_index: nextIndex,
+    start_date: startISO,
+    end_date: newEndISO,
+    period_json: { ...gen, days: spacedDays },
+  });
+  if (insErr) throw insErr;
+
+  return { start_date: startISO, end_date: newEndISO, days: spacedDays.length, period_index: nextIndex };
 }
 
 /**
@@ -249,7 +313,7 @@ router.get("/:id/today", async (req, res) => {
 
 /**
  * GET /api/programs/:id/week?start=YYYY-MM-DD
- * Returns a 7-day slice.
+ * Returns a 7-day slice. If not fully covered, returns partial + needs_extension hint.
  */
 router.get("/:id/week", async (req, res) => {
   try {
@@ -259,14 +323,41 @@ router.get("/:id/week", async (req, res) => {
     const periods = await period.loadPeriods(programId);
     const days: Array<{ date: string; plan: any }> = [];
 
+    // find the last stored end date across all periods
+    const lastEndISO = periods.length
+      ? (periods as any[]).map((p) => p.end_date).sort().slice(-1)[0]
+      : null;
+
+    let missingFromISO: string | null = null;
+
     for (let i = 0; i < 7; i++) {
       const d = new Date(startISO);
       d.setDate(d.getDate() + i);
       const iso = d.toISOString().slice(0, 10);
-      days.push({ date: iso, plan: period.dayAt(periods, d) });
+
+      const inRange = !lastEndISO || iso <= lastEndISO;
+      const plan = inRange ? period.dayAt(periods, d) : null;
+
+      days.push({ date: iso, plan });
+
+      if ((!inRange || plan == null) && !missingFromISO) {
+        missingFromISO = iso; // first gap we can’t serve
+      }
     }
 
-    res.json({ week_start: startISO, days });
+    const payload: any = { week_start: startISO, days };
+
+    if (missingFromISO) {
+      const gapIndex = days.findIndex((x) => x.date === missingFromISO);
+      const required = 7 - gapIndex;
+      payload.needs_extension = {
+        from: missingFromISO,
+        required_days: required,
+        hint: "POST /api/programs/:id/extend with { from, weeks_hint }",
+      };
+    }
+
+    res.json(payload);
   } catch (e: any) {
     console.error("GET /api/programs/:id/week error:", e);
     res.status(500).json({ error: e.message || "unknown error" });
@@ -454,6 +545,60 @@ router.patch("/:id/periods/:index", async (req, res) => {
   }
 });
 
+router.post("/:id/extend", async (req, res) => {
+  try {
+    const programId = req.params.id;
+    const requestedFrom = String(req.body?.from || "").slice(0, 10);
+    const requiredDays = Number.isFinite(Number(req.body?.required_days))
+      ? Math.max(1, Number(req.body.required_days))
+      : null;
+    const weeksHint = requiredDays ? Math.ceil(requiredDays / 7) : Math.max(1, Number(req.body?.weeks_hint || 4));
+
+    if (!requestedFrom) return res.status(400).json({ error: "from required (YYYY-MM-DD)" });
+
+    const { data: prog, error: progErr } = await supa
+      .from("program").select("*").eq("program_id", programId).maybeSingle();
+    if (progErr) throw progErr;
+    if (!prog) return res.status(404).json({ error: "Program not found" });
+
+    const periods = await period.loadPeriods(programId);
+    const lastEndISO = periods.length
+      ? periods.map((p: any) => p.end_date).reduce((a: string, b: string) => (a > b ? a : b))
+      : null;
+
+    // compute safeStart = max(requestedFrom, lastEndISO+1)
+    let safeStart = requestedFrom;
+    if (lastEndISO) {
+      const d = new Date(lastEndISO);
+      d.setDate(d.getDate() + 1);
+      const nextISO = d.toISOString().slice(0, 10);
+      if (safeStart < nextISO) safeStart = nextISO;
+    }
+
+    // if still not strictly after lastEndISO, bail
+    if (lastEndISO && safeStart <= lastEndISO) {
+      return res.status(400).json({ error: `from (${requestedFrom}) must be after last end_date (${lastEndISO})` });
+    }
+
+    // optional: quick log helps verify payloads while testing
+    console.log("[/extend] requestedFrom=", requestedFrom, "lastEndISO=", lastEndISO, "safeStart=", safeStart);
+
+    const appended = await appendPeriodToCover(
+      programId,
+      safeStart,
+      weeksHint,
+      prog.spec_json || {},
+      requiredDays ?? undefined
+    );
+
+    await supa.from("program").update({ end_date: appended.end_date }).eq("program_id", programId);
+    res.json({ ok: true, appended });
+  } catch (e: any) {
+    console.error("POST /api/programs/:id/extend error:", e);
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
 // Rolling window helper
 router.get("/:id/window", async (req, res) => {
   try {
@@ -479,5 +624,4 @@ router.get("/:id/window", async (req, res) => {
 });
 
 export default router;
-
 
