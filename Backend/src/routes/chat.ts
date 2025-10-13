@@ -184,6 +184,91 @@ async function detectProgramIntent(
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/* NEW: spacing helper for chat-created programs (mirrors /programs route)   */
+/* -------------------------------------------------------------------------- */
+type Weekday = "Sun" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat";
+
+/** Spread/force days_per_week inside each 7-day block; honour training_days if given. */
+function enforceDaysPerWeek(
+  days: Array<{ plan?: any } | any>,
+  effectiveDateISO: string,
+  daysPerWeek: number,
+  trainingDays?: Weekday[] | null
+) {
+  const wants = Math.max(0, Math.min(7, Number(daysPerWeek || 0)));
+  if (wants === 7) return days;
+
+  // shallow clone so we don't mutate the generator result
+  const out = days.map((d: any) => (d?.plan ? { ...d, plan: { ...d.plan } } : { ...d }));
+  const eff = new Date(effectiveDateISO);
+  const weekday = (d: Date): Weekday =>
+    (["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] as Weekday[])[d.getDay()];
+  const prefSet = new Set<Weekday>((trainingDays ?? []) as Weekday[]);
+
+  for (let base = 0; base < out.length; base += 7) {
+    const end = Math.min(out.length, base + 7);
+    const len = end - base;
+    if (len <= 0) break;
+
+    const dates: Date[] = [];
+    const candidates: number[] = [];
+    for (let j = 0; j < len; j++) {
+      const d = new Date(eff);
+      d.setDate(eff.getDate() + (base + j));
+      dates.push(d);
+      // treat “has content” in both shapes: {plan} or plain day
+      const hasPlan = out[base + j]?.plan || out[base + j];
+      if (hasPlan) candidates.push(j);
+    }
+    if (!candidates.length) continue;
+
+    const k = Math.min(wants, candidates.length);
+    let chosen: number[] = [];
+
+    if (prefSet.size > 0) {
+      for (const j of candidates) {
+        if (chosen.length >= k) break;
+        if (prefSet.has(weekday(dates[j]))) chosen.push(j);
+      }
+      if (chosen.length < k) {
+        const remaining = candidates.filter((i) => !chosen.includes(i));
+        chosen = chosen.concat(evenlySpread(remaining, k - chosen.length));
+      }
+    } else {
+      chosen = evenlySpread(candidates, k);
+    }
+
+    for (let j = 0; j < len; j++) {
+      const idx = base + j;
+      if (out[idx]?.plan) {
+        out[idx].plan.active = chosen.includes(j);
+      } else {
+        // universal days typically have top-level fields (active, blocks, etc.)
+        if (typeof out[idx]?.active === "boolean") {
+          out[idx].active = chosen.includes(j);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function evenlySpread(arr: number[], n: number): number[] {
+  if (n <= 0) return [];
+  if (arr.length <= n) return arr.slice();
+  if (n === 1) return [arr[Math.floor(arr.length / 2)]];
+  const picks: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const pos = Math.round((i * (arr.length - 1)) / (n - 1));
+    const pick = arr[pos];
+    if (!picks.includes(pick)) picks.push(pick);
+  }
+  for (const v of arr) { if (picks.length >= n) break; if (!picks.includes(v)) picks.push(v); }
+  return picks.slice(0, n);
+}
+/* -------------------------------------------------------------------------- */
+
 // ---- Create a program using AGENT TYPE & Universal generator ----
 async function createProgramFromIntent(
   userId: string,
@@ -219,16 +304,25 @@ async function createProgramFromIntent(
   if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
     const cand = new Date(parsed.start_date);
     const diffDays = Math.round((cand.getTime() - TODAY.getTime()) / 86400000);
-    if (diffDays >= -3 && diffDays <= 60) start = cand;
+    // widened window to make testing easier (backdate or schedule forward)
+    if (diffDays >= -30 && diffDays <= 180) start = cand;
   }
   const startISO = toISO(start);
+
   let weeksHint = Number.isFinite(Number(parsed?.duration_weeks))
     ? Math.floor(Number(parsed!.duration_weeks))
     : 4;
   weeksHint = Math.max(1, Math.min(12, weeksHint));
+
   const daysPerWeek = Math.max(1, Math.min(7, Number(parsed?.days_per_week ?? 5)));
+  const trainingDays =
+    Array.isArray(parsed?.training_days) && parsed!.training_days.length
+      ? (parsed!.training_days as Weekday[])
+      : null;
+
   const status = start <= TODAY ? "active" : "scheduled";
 
+  // ---- generate ----
   const tGen0 = process.hrtime.bigint?.();
   const gen = await buildProgramDaysUniversal({
     plan_type: agent ?? null,
@@ -251,11 +345,16 @@ async function createProgramFromIntent(
   const daysArray = Array.isArray(gen?.days) ? gen.days : [];
   if (daysArray.length === 0) throw new Error("Generator returned 0 days.");
 
-  const end = new Date(start);
-  end.setDate(end.getDate() + (daysArray.length - 1));
-  const endISO = toISO(end);
-  const normalizedWeeks = Math.max(1, Math.ceil(daysArray.length / 7));
+  // ---- NEW: enforce spacing/explicit weekdays BEFORE saving ----
+  const spacedDays = enforceDaysPerWeek(daysArray, startISO, daysPerWeek, trainingDays);
 
+  // end/start sizing comes from spacedDays (not raw gen.days)
+  const end = new Date(start);
+  end.setDate(end.getDate() + (spacedDays.length - 1));
+  const endISO = toISO(end);
+  const normalizedWeeks = Math.max(1, Math.ceil(spacedDays.length / 7));
+
+  // ---- insert program ----
   const { data: prog, error: progErr } = await supa
     .from("program")
     .insert({
@@ -271,6 +370,7 @@ async function createProgramFromIntent(
         agent,
         modalities: parsed?.modalities?.length ? parsed.modalities : ["General"],
         days_per_week: daysPerWeek,
+        training_days: trainingDays, // persist explicit weekdays
         constraints: [],
         goals: [],
         spec_version: 1,
@@ -280,16 +380,20 @@ async function createProgramFromIntent(
     .single();
   if (progErr) throw progErr;
 
+  // ---- insert first period with spaced days ----
   const { error: perErr } = await supa.from("program_period").insert({
     program_id: prog.program_id,
     period_index: 0,
     start_date: startISO,
     end_date: endISO,
-    period_json: gen,
+    period_json: { ...gen, days: spacedDays },
   });
   if (perErr) throw perErr;
 
-  P?.mark?.("program_created", { program_id: prog.program_id, days: daysArray.length });
+  P?.mark?.("program_created", {
+    program_id: prog.program_id,
+    days: spacedDays.length,
+  });
   return prog.program_id as string;
 }
 
