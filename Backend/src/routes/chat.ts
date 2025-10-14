@@ -9,7 +9,7 @@ import {
   BASE_SYSTEM_PROMPT,
   TRAINING_PROGRAM_GUIDE,
   PROGRAM_INTENT_PROMPT,
-} from "../prompts";
+} from "../prompts/prompt";
 import {
   AgentType,
   agentToProgramType,
