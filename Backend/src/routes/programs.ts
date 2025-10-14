@@ -9,12 +9,25 @@ const router = Router();
 // --- helpers: enforce days_per_week with spacing or explicit training_days ---
 type Weekday = "Sun" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat";
 
+// UTC-safe day math to avoid timezone drift
+const MS_PER_DAY = 86_400_000;
+function dateFromISO_utc(iso: string) {
+  // iso: "YYYY-MM-DD"
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function addDaysUTC(base: Date, n: number) {
+  return new Date(base.getTime() + n * MS_PER_DAY);
+}
+function weekdayUTC(d: Date): Weekday {
+  return (["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] as Weekday[])[d.getUTCDay()];
+}
+
 /**
- * Enforces `days_per_week` starting from `effectiveDateISO`.
- * - If `training_days` provided (array of weekday names), we activate those first.
- * - Otherwise, we evenly distribute active days inside each 7-day block.
+ * Enforces `days_per_week` inside each 7-day block starting from `effectiveDateISO` (UTC).
+ * - If `training_days` provided, we activate those weekdays first.
+ * - Otherwise we evenly distribute among days that already have content.
  * - Never invents content: only toggles `plan.active` on days that already have a plan.
- * - Works for any days_per_week in [1..7]. If > number of planned days in a week, it activates all that exist.
  */
 function enforceDaysPerWeek(
   days: Array<{ plan?: any }>,
@@ -23,14 +36,10 @@ function enforceDaysPerWeek(
   trainingDays?: Weekday[] | null
 ) {
   const wants = Math.max(0, Math.min(7, Number(daysPerWeek || 0)));
-  if (wants === 7) return days; // everything stays active as generated
+  if (wants === 7) return days;
 
   const out = days.map((d) => (d?.plan ? { ...d, plan: { ...d.plan } } : d));
-  const eff = new Date(effectiveDateISO);
-
-  const weekday = (d: Date): Weekday =>
-    (["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as Weekday[])[d.getDay()];
-
+  const eff = dateFromISO_utc(effectiveDateISO);
   const prefSet = new Set<Weekday>((trainingDays ?? []) as Weekday[]);
 
   for (let base = 0; base < out.length; base += 7) {
@@ -38,41 +47,31 @@ function enforceDaysPerWeek(
     const len = end - base;
     if (len <= 0) break;
 
-    // Build date objects for this block and candidate indices that have a plan
-    const dates: Date[] = [];
     const candidates: number[] = [];
+    const dates: Date[] = [];
     for (let j = 0; j < len; j++) {
-      const d = new Date(eff);
-      d.setDate(eff.getDate() + (base + j));
+      const d = addDaysUTC(eff, base + j);
       dates.push(d);
       if (out[base + j]?.plan) candidates.push(j);
     }
-
-    // If no planned days in this block, nothing to toggle
     if (!candidates.length) continue;
 
-    // Determine target count for this block
     const k = Math.min(wants, candidates.length);
-
     let chosen: number[] = [];
 
     if (prefSet.size > 0) {
-      // 1) Honor preferred weekdays first
       for (const j of candidates) {
         if (chosen.length >= k) break;
-        if (prefSet.has(weekday(dates[j]))) chosen.push(j);
+        if (prefSet.has(weekdayUTC(dates[j]))) chosen.push(j);
       }
-      // 2) Fill remainder by even spacing among remaining candidates.
       if (chosen.length < k) {
         const remaining = candidates.filter((i) => !chosen.includes(i));
         chosen = chosen.concat(evenlySpread(remaining, k - chosen.length));
       }
     } else {
-      // No preference → evenly spread among candidates
       chosen = evenlySpread(candidates, k);
     }
 
-    // Toggle actives: chosen → active=true, others with a plan → active=false
     for (let j = 0; j < len; j++) {
       const idx = base + j;
       if (!out[idx]?.plan) continue;
@@ -94,26 +93,20 @@ function evenlySpread(arr: number[], n: number): number[] {
     const pick = arr[pos];
     if (!picks.includes(pick)) picks.push(pick);
   }
-  // top up if rounding caused duplicates
-  for (const v of arr) {
-    if (picks.length >= n) break;
-    if (!picks.includes(v)) picks.push(v);
-  }
+  for (const v of arr) { if (picks.length >= n) break; if (!picks.includes(v)) picks.push(v); }
   return picks.slice(0, n);
 }
-
-/* ---------------- NEW: helper to append a period forward-only ---------------- */
+/* ---------- helper to append a period, supporting exact day counts ---------- */
 async function appendPeriodToCover(
   programId: string,
-  startISO: string,
-  weeksHint: number,
-  spec: any,
-  exactDays?: number // NEW: allow exact day count
+  startISO: string,            // first missing date (YYYY-MM-DD)
+  weeksHint: number,           // e.g. 4
+  spec: any,                   // program.spec_json
+  exactDays?: number           // if provided, force exactly this many days
 ) {
-  // 1) decide target length
   const targetDays = Math.max(1, exactDays ?? weeksHint * 7);
 
-  // 2) generate (use ceil in case targetDays isn't multiple of 7)
+  // Generate enough days to cover the target
   const gen = await buildProgramDaysUniversal({
     plan_type: spec?.agent ?? null,
     weeks: Math.ceil(targetDays / 7),
@@ -129,7 +122,7 @@ async function appendPeriodToCover(
   const daysArray = Array.isArray(gen?.days) ? gen.days : [];
   if (daysArray.length === 0) throw new Error("Generator returned 0 days.");
 
-  // 3) force exact length, then space
+  // Force exact length, then apply spacing/weekdays
   const normalized = normalizeLength(daysArray, targetDays, spec?.agent ?? "Training");
   const spacedDays = enforceDaysPerWeek(
     normalized,
@@ -138,12 +131,12 @@ async function appendPeriodToCover(
     (spec as any)?.training_days ?? null
   );
 
-  // 4) compute end date by actual saved length
-  const newEnd = new Date(startISO);
-  newEnd.setDate(newEnd.getDate() + (spacedDays.length - 1));
+  // Compute end date from actually saved length (UTC)
+  const eff = dateFromISO_utc(startISO);
+  const newEnd = addDaysUTC(eff, spacedDays.length - 1);
   const newEndISO = newEnd.toISOString().slice(0, 10);
 
-  // 5) next period index
+  // Next period index
   const { data: existing, error: exErr } = await supa
     .from("program_period")
     .select("period_index")
@@ -153,7 +146,6 @@ async function appendPeriodToCover(
   if (exErr) throw exErr;
   const nextIndex = (existing?.[0]?.period_index ?? -1) + 1;
 
-  // 6) insert
   const { error: insErr } = await supa.from("program_period").insert({
     program_id: programId,
     period_index: nextIndex,
@@ -548,57 +540,50 @@ router.patch("/:id/periods/:index", async (req, res) => {
 router.post("/:id/extend", async (req, res) => {
   try {
     const programId = req.params.id;
-    const requestedFrom = String(req.body?.from || "").slice(0, 10);
+    const fromISO = String(req.body?.from || "").slice(0, 10);
+
     const requiredDays = Number.isFinite(Number(req.body?.required_days))
       ? Math.max(1, Number(req.body.required_days))
       : null;
-    const weeksHint = requiredDays ? Math.ceil(requiredDays / 7) : Math.max(1, Number(req.body?.weeks_hint || 4));
 
-    if (!requestedFrom) return res.status(400).json({ error: "from required (YYYY-MM-DD)" });
+    const weeksHint = requiredDays
+      ? Math.ceil(requiredDays / 7)
+      : Math.max(1, Number(req.body?.weeks_hint || 4));
+
+    if (!fromISO) return res.status(400).json({ error: "from required (YYYY-MM-DD)" });
 
     const { data: prog, error: progErr } = await supa
       .from("program").select("*").eq("program_id", programId).maybeSingle();
     if (progErr) throw progErr;
     if (!prog) return res.status(404).json({ error: "Program not found" });
 
+    // Ensure we only append forward of the last end_date
     const periods = await period.loadPeriods(programId);
     const lastEndISO = periods.length
       ? periods.map((p: any) => p.end_date).reduce((a: string, b: string) => (a > b ? a : b))
       : null;
 
-    // compute safeStart = max(requestedFrom, lastEndISO+1)
-    let safeStart = requestedFrom;
-    if (lastEndISO) {
-      const d = new Date(lastEndISO);
-      d.setDate(d.getDate() + 1);
-      const nextISO = d.toISOString().slice(0, 10);
-      if (safeStart < nextISO) safeStart = nextISO;
+    if (lastEndISO && fromISO <= lastEndISO) {
+      return res.status(400).json({ error: `from (${fromISO}) must be after last end_date (${lastEndISO})` });
     }
-
-    // if still not strictly after lastEndISO, bail
-    if (lastEndISO && safeStart <= lastEndISO) {
-      return res.status(400).json({ error: `from (${requestedFrom}) must be after last end_date (${lastEndISO})` });
-    }
-
-    // optional: quick log helps verify payloads while testing
-    console.log("[/extend] requestedFrom=", requestedFrom, "lastEndISO=", lastEndISO, "safeStart=", safeStart);
 
     const appended = await appendPeriodToCover(
       programId,
-      safeStart,
+      fromISO,
       weeksHint,
       prog.spec_json || {},
       requiredDays ?? undefined
     );
 
+    // keep parent program end_date in sync
     await supa.from("program").update({ end_date: appended.end_date }).eq("program_id", programId);
+
     res.json({ ok: true, appended });
   } catch (e: any) {
     console.error("POST /api/programs/:id/extend error:", e);
     res.status(500).json({ error: e.message || "unknown error" });
   }
 });
-
 // Rolling window helper
 router.get("/:id/window", async (req, res) => {
   try {
