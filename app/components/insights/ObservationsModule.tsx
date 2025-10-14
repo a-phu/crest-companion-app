@@ -74,19 +74,21 @@ const ObservationsModule: React.FC<ObservationsModuleProps> = ({
     <View style={styles.container}>
       <Text style={styles.heading}>Some observations...</Text>
       <View style={styles.grid}>
-        {observations.map((item, idx) => (
-          <View key={idx} style={styles.card}>
-            <Text style={styles.cardTitle}>
-              {item.title}{" "}
-              <MaterialIcons
-                name={observationIcons[item.title] || "info"} // fallback if not found
-                size={20}
-                color="#4a7c7c"
-              />
-            </Text>
-            <Text style={styles.cardText}>{item.text}</Text>
-          </View>
-        ))}
+        {observations
+          .filter((item) => item.text && item.text.trim() !== "") // 👈 only show non-empty text
+          .map((item, idx) => (
+            <View key={idx} style={styles.card}>
+              <Text style={styles.cardTitle}>
+                {item.title}{" "}
+                <MaterialIcons
+                  name={observationIcons[item.title] || "info"} // fallback if not found
+                  size={20}
+                  color="#4a7c7c"
+                />
+              </Text>
+              <Text style={styles.cardText}>{item.text}</Text>
+            </View>
+          ))}
       </View>
     </View>
   );

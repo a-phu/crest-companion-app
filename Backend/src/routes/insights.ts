@@ -9,7 +9,6 @@ const router = Router();
 /** sanity ping */
 router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "insights" }));
 
-// TODO: do I need to add in my id to this request too?
 /**
  * GET /api/insights
  * Analyzes recent conversation history to generate personalized wellness insights
@@ -17,7 +16,7 @@ router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "insights" }));
  */
 router.get("/", async (_req, res) => {
   try {
-    // Get conversation history from last 30 days, prioritizing important messages
+    // Get conversation history from last 30 days, only important messages
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -28,6 +27,7 @@ router.get("/", async (_req, res) => {
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
           `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
+      .eq("is_important", true)
       .gte("created_at", thirtyDaysAgo.toISOString())
       .order("created_at", { ascending: true });
 
@@ -76,7 +76,6 @@ router.get("/", async (_req, res) => {
       })
       .join("\n\n");
 
-    // TODO: ai should talk in second person to the user
     // Generate insights using OpenAI
     const systemPrompt = `You are a wellness coach analyzing conversation history to generate personalized insights. 
     
@@ -107,16 +106,17 @@ Based on the conversation, provide insights in this EXACT JSON format:
 }
 
 Guidelines:
-- Always return ALL categories, even if the conversation did not mention them
-- For categories not mentioned, write a short, encouraging default message to start tracking (e.g. "No health concerns shared yet — consider noting any symptoms for future insights.")
+- Only include observations for categories mentioned in conversations
+- For missing categories, use encouraging prompts to start tracking
 - Make next actions specific and immediately actionable
 - The reveal should identify a meaningful pattern or connection
 - Keep all text concise and personal
+- Focus on what they've actually shared, not generic advice
 
 Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4o-mini",
       temperature: 0.3,
       response_format: { type: "json_object" },
       max_tokens: 800,
