@@ -6,13 +6,47 @@ import { openai } from '../OpenaiClient';
 
 const router = Router();
 
+// Simple in-memory cache for insights
+type InsightsResponse = {
+  observations: {
+    cognition: string;
+    identity: string;
+    mind: string;
+    clinical: string;
+    nutrition: string;
+    training: string;
+    body: string;
+    sleep: string;
+  };
+  nextActions: Array<{
+    title: string;
+    text: string;
+  }>;
+  reveal: string;
+};
+
+type CachedInsights = {
+  data: InsightsResponse;
+  lastMessageCount: number;
+  timestamp: Date;
+};
+
+let insightsCache: CachedInsights | null = null;
+
 /** sanity ping */
 router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'insights' }));
+
+/** Clear insights cache */
+router.delete('/cache', (_req, res) => {
+  insightsCache = null;
+  res.json({ message: 'Insights cache cleared' });
+});
 
 /**
  * GET /api/insights
  * Analyzes recent conversation history to generate personalized wellness insights
  * Returns structured data for ObservationsModule, NextActionsModule, and RevealModule
+ * Uses caching to serve previous insights immediately when available
  */
 router.get('/', async (_req, res) => {
   try {
@@ -33,9 +67,17 @@ router.get('/', async (_req, res) => {
 
     if (error) throw error;
 
+    const messageCount = messages?.length || 0;
+    
+    // Check if we have cached insights and if they're still valid
+    if (insightsCache !== null && insightsCache.lastMessageCount === messageCount) {
+      console.log('Serving cached insights');
+      return res.json(insightsCache.data);
+    }
+
     if (!messages || messages.length === 0) {
       // Return default insights if no conversation history
-      return res.json({
+      const defaultInsights: InsightsResponse = {
         observations: {
           cognition: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
           identity: "Tell me about your personal goals and values to understand your identity and purpose.",
@@ -57,7 +99,16 @@ router.get('/', async (_req, res) => {
           }
         ],
         reveal: "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."
-      });
+      };
+      
+      // Cache the default insights too
+      insightsCache = {
+        data: defaultInsights,
+        lastMessageCount: messageCount,
+        timestamp: new Date()
+      };
+      
+      return res.json(defaultInsights);
     }
 
     // Prepare conversation context for AI analysis
@@ -118,13 +169,21 @@ Return ONLY valid JSON.`;
     });
 
     const raw = completion.choices?.[0]?.message?.content ?? '{}';
-    const insights = JSON.parse(raw);
+    const insights = JSON.parse(raw) as InsightsResponse;
 
     // Validate the response structure
     if (!insights.observations || !insights.nextActions || !insights.reveal) {
       throw new Error('Invalid insights response structure');
     }
 
+    // Cache the new insights
+    insightsCache = {
+      data: insights,
+      lastMessageCount: messageCount,
+      timestamp: new Date()
+    };
+    
+    console.log('Generated and cached new insights');
     res.json(insights);
 
   } catch (e: any) {
