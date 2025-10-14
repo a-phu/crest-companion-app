@@ -36,7 +36,7 @@ const JSON_SCHEMA = {
           properties: {
             active: { type: "boolean" },
             notes: { type: "string" },
-            intensity: { type: ["string","number"] },
+            intensity: { type: ["string", "number"] },
             tags: { type: "array", items: { type: "string" } },
             blocks: {
               type: "array",
@@ -49,7 +49,7 @@ const JSON_SCHEMA = {
                   metrics: {
                     type: "object",
                     additionalProperties: {
-                      type: ["string","number","boolean","null"]
+                      type: ["string", "number", "boolean", "null"]
                     }
                   }
                 },
@@ -74,7 +74,7 @@ function makeRecoveryDay(planType: string) {
       active: false,
       notes: "Sleep hygiene & recovery",
       intensity: "easy",
-      tags: ["recovery","sleep"],
+      tags: ["recovery", "sleep"],
       blocks: [
         {
           name: "Wind-down routine",
@@ -96,7 +96,7 @@ function makeRecoveryDay(planType: string) {
       active: false,
       notes: "Nutrition recovery & hydration",
       intensity: "easy",
-      tags: ["recovery","nutrition"],
+      tags: ["recovery", "nutrition"],
       blocks: [
         { name: "Hydration", metrics: { liters: 2 } },
         { name: "Protein target", metrics: { grams: 120 } },
@@ -109,7 +109,7 @@ function makeRecoveryDay(planType: string) {
     active: false,
     notes: "Recovery & mobility",
     intensity: "easy",
-    tags: ["recovery","mobility"],
+    tags: ["recovery", "mobility"],
     blocks: [
       { name: "Walk", metrics: { time_min: 20 } },
       { name: "Mobility flow", metrics: { time_min: 10 } },
@@ -180,7 +180,7 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
   const system = [
     "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
     "Absolutely NO prose, NO markdown, only JSON.",
-    `Return exactly ${totalDays} items in "days".`,
+    `Return exactly ${totalDays} items in 'days'.`,
     "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
     "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
     "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",

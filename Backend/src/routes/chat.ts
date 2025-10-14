@@ -424,6 +424,7 @@ async function dispatchProgramChangeFromChat(opts: {
     const prog = await findLatestProgramForAgent(userId, agent);
     if (!prog?.program_id) return;
 
+
     const payload: any = {};
     if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date))
       payload.effective_date = parsed.start_date;
@@ -431,7 +432,12 @@ async function dispatchProgramChangeFromChat(opts: {
       payload.days_per_week = Number(parsed!.days_per_week);
     if (Array.isArray(parsed?.modalities) && parsed!.modalities.length)
       payload.modalities = parsed!.modalities;
-
+    // ADD THIS:
+    if (Array.isArray(parsed?.training_days) && parsed!.training_days.length)
+      payload.training_days = parsed!.training_days;
+    // (optional) allow changing period length:
+    if (Number.isFinite(Number((parsed as any)?.new_period_weeks)))
+      payload.new_period_weeks = Math.max(1, Math.min(12, Number((parsed as any)?.new_period_weeks)));
     const base = process.env.INTERNAL_BASE_URL || "";
     if (!base) return;
 
