@@ -1,4 +1,5 @@
 import { openai } from "./OpenaiClient";
+import { UNIVERSAL_PROGRAM_SYSTEM_PROMPT } from "./prompts/prompt";
 
 export type BuildArgs = {
   plan_type?: string | null; // e.g. "Training", "Sleep", "Nutrition", "Hybrid", ...
@@ -177,15 +178,7 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
   const totalDays = Math.max(1, Math.min(52, Math.floor(weeks || 1))) * 7;
   const daysPerWeek = Math.max(1, Math.min(7, Math.floor(hints?.days_per_week ?? 5)));
 
-  const system = [
-    "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
-    "Absolutely NO prose, NO markdown, only JSON.",
-    `Return exactly ${totalDays} items in 'days'.`,
-    "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
-    "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
-    "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",
-    "Never add a field named 'kind'. Keep the schema minimal and flexible."
-  ].join("\n");
+  const system = UNIVERSAL_PROGRAM_SYSTEM_PROMPT.replace("${totalDays}", String(totalDays));
 
   const userPayload = {
     request_text,
