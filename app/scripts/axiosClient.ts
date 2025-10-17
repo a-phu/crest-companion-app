@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // 👇 Dynamic baseURL based on platform
 const getBaseURL = () => {
   if (Platform.OS === 'android') {
-    return "http://192.168.1.103:8080/api";  // Android emulator
+    return "http://192.168.1.130:8080/api";  // Android emulator
   }
   // For iOS simulator or physical device, you may need your computer's IP
   return "http://localhost:8080/api";     // iOS simulator
