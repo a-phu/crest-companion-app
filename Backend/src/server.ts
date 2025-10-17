@@ -6,7 +6,7 @@ import messages from './routes/messages';
 import chat from './routes/chat';
 import debugRoutes from './routes/debug';   // ← add this
 import program from './routes/programs'; // <- if you have a programs route
-import insights from './routes/insights';
+import insights from './routes/insights'; /
 const app = express();
 app.use(cors());
 app.use(express.json());
