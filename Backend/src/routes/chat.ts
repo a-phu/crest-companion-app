@@ -19,26 +19,6 @@ import { buildProgramDaysUniversal } from "../universalProgram";
 
 const router = Router();
 
-// Helper function to trigger insights generation
-async function triggerInsightsGeneration(userId: string, P: Profiler) {
-  try {
-    P.mark("insights_trigger_start");
-    const response = await fetch('http://localhost:8080/api/insights/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (response.ok) {
-      P.mark("insights_trigger_success");
-    } else {
-      P.mark("insights_trigger_failed", { status: response.status });
-    }
-  } catch (error: any) {
-    P.mark("insights_trigger_error", { error: error.message });
-    console.log('Failed to trigger insights generation:', error.message);
-  }
-}
-
 // -----------------------------
 // Types
 // -----------------------------
@@ -771,10 +751,6 @@ router.post("/:humanId", async (req, res) => {
           P.mark("update_ai_msg_error", { error: upd1.error.message });
         else P.mark("update_ai_msg_ok");
         
-        // Trigger insights generation if AI message is important
-        if (aiImp.important) {
-          void triggerInsightsGeneration(humanId, P);
-        }
       } catch (e: any) {
         P.mark("post_response_pipeline_error", { error: e?.message });
       }
