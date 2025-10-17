@@ -7,8 +7,7 @@ const getBaseURL = () => {
   if (Platform.OS === 'android') {
     return "http://192.168.1.130:8080/api";  // Android emulator
   }
-  // For iOS simulator or physical device, you may need your computer's IP
-  return "http://localhost:8080/api";     // iOS simulator
+  return "http://localhost:8080/api";
 };
 
 const api = axios.create({
