@@ -37,9 +37,7 @@ const ChatbotScreen = () => {
   // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (message: string): Promise<string> => {
     try {
-      // Use the HUMAN_ID from your backend constants
-      const HUMAN_ID = '62476c93-4028-4575-a301-95dbc1c88f43';
-      const response = await api.post(`/chat/${HUMAN_ID}`, { text: message });
+      const response = await api.post("/chat", { text: message });
       return response.data.reply;
     } catch (error) {
       console.error("Error sending message:", error);
