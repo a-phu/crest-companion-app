@@ -151,21 +151,44 @@ async function detectProgramIntent(
 ): Promise<IntentResult> {
   const u = (text ?? "").slice(0, 2000);
   const t0 = process.hrtime.bigint();
+  
+  // Add current date context to help AI parse relative dates
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayISO = today.toISOString().slice(0, 10);
+  const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+  
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     response_format: { type: "json_object" },
     temperature: 0,
     messages: [
-      { role: "system", content: PROGRAM_INTENT_PROMPT },
+      { 
+        role: "system", 
+        content: PROGRAM_INTENT_PROMPT + `\n\nCurrent context: Today is ${todayISO}, tomorrow is ${tomorrowISO}. Always convert relative dates to absolute YYYY-MM-DD format.`
+      },
       { role: "user", content: u },
     ],
   });
+  
   const t1 = process.hrtime.bigint();
   P.mark("intent_detect_done", { ms_inner: Number(t1 - t0) / 1_000_000 });
 
   let parsedAny: any = {};
   try {
     parsedAny = JSON.parse(completion.choices?.[0]?.message?.content ?? "{}");
+    
+    // DEBUG: Enhanced logging
+    console.log('DEBUG detectProgramIntent ENHANCED:', {
+      userText: u.slice(0, 100),
+      todayISO,
+      tomorrowISO,
+      aiResponse: parsedAny,
+      parsedStartDate: parsedAny?.parsed?.start_date,
+      rawAIContent: completion.choices?.[0]?.message?.content
+    });
+    
   } catch {}
 
   const action: IntentAction =
@@ -301,12 +324,23 @@ async function createProgramFromIntent(
   const TODAY = new Date();
   const toISO = (d: Date) => d.toISOString().slice(0, 10);
   let start = TODAY;
+  
   if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
     const cand = new Date(parsed.start_date);
     const diffDays = Math.round((cand.getTime() - TODAY.getTime()) / 86400000);
     // widened window to make testing easier (backdate or schedule forward)
     if (diffDays >= -30 && diffDays <= 180) start = cand;
   }
+  
+  // DEBUG: Add logging to see what's happening
+  console.log('DEBUG createProgramFromIntent:', {
+    rawRequest,
+    parsedStartDate: parsed?.start_date,
+    todayISO: toISO(TODAY),
+    finalStartISO: toISO(start),
+    agent
+  });
+
   const startISO = toISO(start);
 
   let weeksHint = Number.isFinite(Number(parsed?.duration_weeks))
