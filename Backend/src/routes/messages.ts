@@ -3,8 +3,20 @@ import { Router } from "express";
 import { supa } from "../supabase";
 import { HUMAN_ID, AI_ID } from "../id";
 import { classifyImportance } from "../importance";
+import axios from "axios";
 
 const router = Router();
+
+// Helper function to trigger insights generation
+async function triggerInsightsGeneration() {
+  try {
+    // Make internal API call to generate insights
+    const response = await axios.post('http://localhost:8080/api/insights/generate');
+    console.log('Insights generation triggered successfully:', response.data.message);
+  } catch (error: any) {
+    console.error('Failed to trigger insights generation:', error.message);
+  }
+}
 
 /** sanity ping */
 router.get("/__ping", (_req, res) =>
@@ -47,6 +59,15 @@ router.post("/send", async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // If message is marked as important, trigger insights generation in background
+    if (important) {
+      console.log('Important message detected, triggering insights generation...');
+      // Trigger insights generation asynchronously (don't wait for it)
+      triggerInsightsGeneration().catch((err: any) => {
+        console.error('Background insights generation failed:', err);
+      });
+    }
 
     res.json({ ...data, importance: { important, agent_type, reason } });
   } catch (e: any) {
