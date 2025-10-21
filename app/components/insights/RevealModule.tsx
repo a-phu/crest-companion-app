@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 24,
     margin: 16,
+
     gap: 10,
   },
   heading: {
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_500Medium",
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#fff",
     lineHeight: 20,
     textAlign: "center",

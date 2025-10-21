@@ -67,4 +67,9 @@ const markdownStyles = StyleSheet.create({
   strong: { color: "#fff" }, // bold text
   em: { fontStyle: "italic", color: "#fff" }, // italic
   list_item: { marginVertical: 4 },
+  hr: {
+    borderBottomColor: "#fff", // sets the horizontal rule color to white
+    borderBottomWidth: 2, // thin line (you can increase to 1 or 2)
+    marginVertical: 10,
+  },
 });

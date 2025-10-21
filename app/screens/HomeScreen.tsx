@@ -71,7 +71,7 @@ export default function HomeScreen({ navigation }) {
           <View>
             {/* <Text style={styles.welcomeText}>Hello!</Text> */}
             <Text style={styles.subtitleText}>
-              Hello! I am the{"\n"}Crest Companion.
+              Hello! I am the{"\n"}Crest Companion
             </Text>
           </View>
           <Pressable
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "space-between",
     // padding: 20,
-    marginTop: 250,
+    marginTop: 225,
     gap: 40,
     // backgroundColor: "#354f5249",
   },
@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
     height: 300,
     width: 300,
   },
-
   contentContainer: {
     flex: 1,
     gap: 30,

@@ -10,11 +10,7 @@ import {
   TRAINING_PROGRAM_GUIDE,
   PROGRAM_INTENT_PROMPT,
 } from "../prompts/prompt";
-import {
-  AgentType,
-  agentToProgramType,
-  isProgramCapable,
-} from "../agents";
+import { AgentType, agentToProgramType, isProgramCapable } from "../agents";
 import { buildProgramDaysUniversal } from "../universalProgram";
 
 const router = Router();
@@ -44,7 +40,9 @@ type IntentParsed = {
   duration_weeks?: number | null;
   days_per_week?: number | null;
   modalities?: string[] | null;
-  training_days?: ("Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun")[] | null;
+  training_days?:
+    | ("Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun")[]
+    | null;
 };
 
 type IntentResult = {
@@ -195,8 +193,8 @@ async function detectProgramIntent(
     parsedAny?.action === "change"
       ? "change"
       : parsedAny?.should_create
-      ? "create"
-      : "none";
+        ? "create"
+        : "none";
 
   return {
     should_create: !!parsedAny?.should_create,
@@ -223,10 +221,14 @@ function enforceDaysPerWeek(
   if (wants === 7) return days;
 
   // shallow clone so we don't mutate the generator result
-  const out = days.map((d: any) => (d?.plan ? { ...d, plan: { ...d.plan } } : { ...d }));
+  const out = days.map((d: any) =>
+    d?.plan ? { ...d, plan: { ...d.plan } } : { ...d }
+  );
   const eff = new Date(effectiveDateISO);
   const weekday = (d: Date): Weekday =>
-    (["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] as Weekday[])[d.getDay()];
+    (["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as Weekday[])[
+      d.getDay()
+    ];
   const prefSet = new Set<Weekday>((trainingDays ?? []) as Weekday[]);
 
   for (let base = 0; base < out.length; base += 7) {
@@ -287,7 +289,10 @@ function evenlySpread(arr: number[], n: number): number[] {
     const pick = arr[pos];
     if (!picks.includes(pick)) picks.push(pick);
   }
-  for (const v of arr) { if (picks.length >= n) break; if (!picks.includes(v)) picks.push(v); }
+  for (const v of arr) {
+    if (picks.length >= n) break;
+    if (!picks.includes(v)) picks.push(v);
+  }
   return picks.slice(0, n);
 }
 /* -------------------------------------------------------------------------- */
@@ -348,7 +353,10 @@ async function createProgramFromIntent(
     : 4;
   weeksHint = Math.max(1, Math.min(12, weeksHint));
 
-  const daysPerWeek = Math.max(1, Math.min(7, Number(parsed?.days_per_week ?? 5)));
+  const daysPerWeek = Math.max(
+    1,
+    Math.min(7, Number(parsed?.days_per_week ?? 5))
+  );
   const trainingDays =
     Array.isArray(parsed?.training_days) && parsed!.training_days.length
       ? (parsed!.training_days as Weekday[])
@@ -380,7 +388,12 @@ async function createProgramFromIntent(
   if (daysArray.length === 0) throw new Error("Generator returned 0 days.");
 
   // ---- NEW: enforce spacing/explicit weekdays BEFORE saving ----
-  const spacedDays = enforceDaysPerWeek(daysArray, startISO, daysPerWeek, trainingDays);
+  const spacedDays = enforceDaysPerWeek(
+    daysArray,
+    startISO,
+    daysPerWeek,
+    trainingDays
+  );
 
   // end/start sizing comes from spacedDays (not raw gen.days)
   const end = new Date(start);
@@ -402,7 +415,9 @@ async function createProgramFromIntent(
         source: "chat",
         raw_request: rawRequest,
         agent,
-        modalities: parsed?.modalities?.length ? parsed.modalities : ["General"],
+        modalities: parsed?.modalities?.length
+          ? parsed.modalities
+          : ["General"],
         days_per_week: daysPerWeek,
         training_days: trainingDays, // persist explicit weekdays
         constraints: [],
@@ -458,7 +473,6 @@ async function dispatchProgramChangeFromChat(opts: {
     const prog = await findLatestProgramForAgent(userId, agent);
     if (!prog?.program_id) return;
 
-
     const payload: any = {};
     if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date))
       payload.effective_date = parsed.start_date;
@@ -471,7 +485,10 @@ async function dispatchProgramChangeFromChat(opts: {
       payload.training_days = parsed!.training_days;
     // (optional) allow changing period length:
     if (Number.isFinite(Number((parsed as any)?.new_period_weeks)))
-      payload.new_period_weeks = Math.max(1, Math.min(12, Number((parsed as any)?.new_period_weeks)));
+      payload.new_period_weeks = Math.max(
+        1,
+        Math.min(12, Number((parsed as any)?.new_period_weeks))
+      );
     const base = process.env.INTERNAL_BASE_URL || "";
     if (!base) return;
 
@@ -504,7 +521,10 @@ type BaseContext = {
   messages: ChatMessage[];
 };
 
-async function fetchBaseContext(humanId: string, P: Profiler): Promise<BaseContext> {
+async function fetchBaseContext(
+  humanId: string,
+  P: Profiler
+): Promise<BaseContext> {
   const q0 = process.hrtime.bigint();
   const recentQ = await supa
     .from("message")
@@ -663,7 +683,10 @@ router.post("/:humanId", async (req, res) => {
     // Early, non-blocking user-row update
     void supa
       .from("message")
-      .update({ is_important: userImp.important, agent_type: userImp.agent_type })
+      .update({
+        is_important: userImp.important,
+        agent_type: userImp.agent_type,
+      })
       .eq("message_id", ins0.data!.message_id)
       .then(({ error }) =>
         error
@@ -686,8 +709,8 @@ router.post("/:humanId", async (req, res) => {
     const inferredAgent: AgentType = isProgramCapable(intent.agent)
       ? intent.agent
       : isProgramCapable(userImp.agent_type as AgentType)
-      ? (userImp.agent_type as AgentType)
-      : "other";
+        ? (userImp.agent_type as AgentType)
+        : "other";
 
     if (
       intent.action === "create" &&
@@ -695,7 +718,13 @@ router.post("/:humanId", async (req, res) => {
       intent.confidence >= 0.6 &&
       isProgramCapable(inferredAgent)
     ) {
-      void createProgramFromIntent(humanId, text, inferredAgent, intent.parsed, P)
+      void createProgramFromIntent(
+        humanId,
+        text,
+        inferredAgent,
+        intent.parsed,
+        P
+      )
         .then((id) =>
           P.mark("program_create", {
             program_id: id || "skipped",
@@ -727,7 +756,10 @@ router.post("/:humanId", async (req, res) => {
     ) {
       systemPrompt += TRAINING_PROGRAM_GUIDE;
     }
-    const messages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...ctx];
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...ctx,
+    ];
     const b1 = process.hrtime.bigint();
     P.mark("build_prompt", {
       total_msgs: messages.length,
@@ -737,7 +769,7 @@ router.post("/:humanId", async (req, res) => {
     // 6) Model call for the assistant reply
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-nano",
       temperature: 0.3,
       max_tokens: 1000,
       messages,
@@ -779,7 +811,10 @@ router.post("/:humanId", async (req, res) => {
         const aiImp = await classifyWithRetry(reply, P, "ai");
         const upd1 = await supa
           .from("message")
-          .update({ is_important: aiImp.important, agent_type: aiImp.agent_type })
+          .update({
+            is_important: aiImp.important,
+            agent_type: aiImp.agent_type,
+          })
           .eq("message_id", ins1.data!.message_id);
         if (upd1.error)
           P.mark("update_ai_msg_error", { error: upd1.error.message });

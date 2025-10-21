@@ -1,16 +1,19 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Platform,
   Text,
+  ActivityIndicator,
+  View,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import ChatInput from "../components/chat/ChatInput";
 import ChatBubble from "../components/chat/ChatBubble";
 import type { Message } from "../utils/message";
 import CrestAppBar from "../components/CrestAppBar";
+import MessageHistory from "../utils/messageHistory";
 
 import {
   useFonts,
@@ -21,11 +24,15 @@ import {
 } from "@expo-google-fonts/quicksand";
 
 import api from "../scripts/axiosClient";
+// UUIDs for identifying user vs. assistant
+const USER_ID = "b9576a32-334b-4444-866e-4ec176d377ff";
+const ASSISTANT_ID = "61a72b2b-9fac-4cba-bd02-aa6252765b39";
 
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const ChatbotScreen = () => {
-  const [text, setText] = React.useState("");
+  const [loading, setLoading] = useState(false);
+
   const [messages, setMessages] = useState<Message[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -34,10 +41,48 @@ const ChatbotScreen = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
+  const fetchChatHistory = async (): Promise<Message[]> => {
+    try {
+      //   const response = await api.get<MessageHistory[]>(`/messages/thread`);
+      //   return response.data.map((msg: any) => new MessageHistory(msg));
+      // } catch (error) {
+      //   console.error("Error fetching thread messages:", error);
+      //   throw error;
+      // }
+
+      const response = await api.get(`/messages/thread`);
+
+      // Map backend JSON → frontend Message[]
+      const messages: Message[] = response.data.map((item: any) => {
+        const role =
+          item.sender_id === USER_ID
+            ? "user"
+            : item.sender_id === ASSISTANT_ID
+              ? "assistant"
+              : "system";
+
+        return {
+          id: item.message_id,
+          role,
+          content: item.content,
+          createdAt: new Date(item.created_at).getTime(),
+        };
+      });
+
+      return messages;
+    } catch (error) {
+      console.error("Error fetching thread messages:", error);
+      throw error;
+    }
+  };
+
   // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (message: string): Promise<string> => {
     try {
-      const response = await api.post("/chat", { text: message });
+      const response = await api.post(
+        "/chat/b9576a32-334b-4444-866e-4ec176d377ff",
+        { text: message }
+      );
       return response.data.reply;
     } catch (error) {
       console.error("Error sending message:", error);
@@ -61,17 +106,19 @@ const ChatbotScreen = () => {
 
     // TODO: add styling to “typing…” placeholder
     const typingId = genId();
+
     setMessages((prev) => [
       ...prev,
       {
         id: typingId,
         role: "assistant",
-        content: "…", // or "Assistant is typing"
+        content: "", // or "Assistant is typing"
         createdAt: Date.now(),
       },
     ]);
 
     try {
+      setLoading(true);
       const reply = await fetchAssistantReply(trimmed);
 
       // Replace the typing bubble with the real reply
@@ -94,8 +141,32 @@ const ChatbotScreen = () => {
             : m
         )
       );
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const data = await fetchChatHistory();
+        setMessages(data);
+      } catch {
+        console.log("Failed to load messages");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [messages]);
 
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -125,6 +196,13 @@ const ChatbotScreen = () => {
                 <ChatBubble key={item.id} msg={item} />
               ))}
             </ScrollView>
+          )}
+          {loading && (
+            <View
+              style={{ padding: 10, alignItems: "center", marginBottom: 250 }}
+            >
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
           )}
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
         </KeyboardAvoidingView>

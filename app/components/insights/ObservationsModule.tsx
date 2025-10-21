@@ -22,26 +22,43 @@ interface ObservationsModuleProps {
   };
 }
 
-const ObservationsModule: React.FC<ObservationsModuleProps> = ({ observations: observationsData }) => {
-  const observations = observationsData ? [
-    { title: "Cognition", text: observationsData.cognition },
-    { title: "Identity", text: observationsData.identity },
-    { title: "Mind", text: observationsData.mind },
-    { title: "Clinical", text: observationsData.clinical },
-    { title: "Nutrition", text: observationsData.nutrition },
-    { title: "Training", text: observationsData.training },
-    { title: "Body", text: observationsData.body },
-    { title: "Sleep", text: observationsData.sleep },
-  ] : [
-    { title: "Cognition", text: "Loading cognition insights..." },
-    { title: "Identity", text: "Loading identity insights..." },
-    { title: "Mind", text: "Loading mind insights..." },
-    { title: "Clinical", text: "Loading clinical insights..." },
-    { title: "Nutrition", text: "Loading nutrition insights..." },
-    { title: "Training", text: "Loading training insights..." },
-    { title: "Body", text: "Loading body insights..." },
-    { title: "Sleep", text: "Loading sleep insights..." },
-  ];
+const ObservationsModule: React.FC<ObservationsModuleProps> = ({
+  observations: observationsData,
+}) => {
+  const observations = observationsData
+    ? [
+        { title: "Cognition", text: observationsData.cognition },
+        { title: "Identity", text: observationsData.identity },
+        { title: "Mind", text: observationsData.mind },
+        { title: "Clinical", text: observationsData.clinical },
+        { title: "Nutrition", text: observationsData.nutrition },
+        { title: "Training", text: observationsData.training },
+        { title: "Body", text: observationsData.body },
+        { title: "Sleep", text: observationsData.sleep },
+      ]
+    : [
+        { title: "Cognition", text: "Loading cognition insights..." },
+        { title: "Identity", text: "Loading identity insights..." },
+        { title: "Mind", text: "Loading mind insights..." },
+        { title: "Clinical", text: "Loading clinical insights..." },
+        { title: "Nutrition", text: "Loading nutrition insights..." },
+        { title: "Training", text: "Loading training insights..." },
+        { title: "Body", text: "Loading body insights..." },
+        { title: "Sleep", text: "Loading sleep insights..." },
+      ];
+
+  const observationIcons: Record<string, keyof typeof MaterialIcons.glyphMap> =
+    {
+      Cognition: "psychology", // 🧠 thinking, analysis
+      Identity: "face-retouching-natural", // 🆔 uniqueness / self-identity
+      Mind: "self-improvement", // 🧘‍♂️ meditation / inner mind
+      Clinical: "medical-services", // 🏥 health/clinical care
+      Nutrition: "restaurant", // 🍴 food / diet
+      Training: "fitness-center", // 🏋️‍♀️ exercise
+      Body: "accessibility-new", // 🧍 human body / posture
+      Sleep: "bedtime", // 🌙 sleep / night
+    };
+
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
@@ -57,15 +74,21 @@ const ObservationsModule: React.FC<ObservationsModuleProps> = ({ observations: o
     <View style={styles.container}>
       <Text style={styles.heading}>Some observations...</Text>
       <View style={styles.grid}>
-        {observations.map((item, idx) => (
-          <View key={idx} style={styles.card}>
-            <Text style={styles.cardTitle}>
-              {item.title}{" "}
-              <MaterialIcons name="check-circle" size={16} color="#4a7c7c" />
-            </Text>
-            <Text style={styles.cardText}>{item.text}</Text>
-          </View>
-        ))}
+        {observations
+          .filter((item) => item.text && item.text.trim() !== "") // 👈 only show non-empty text
+          .map((item, idx) => (
+            <View key={idx} style={styles.card}>
+              <Text style={styles.cardTitle}>
+                {item.title}{" "}
+                <MaterialIcons
+                  name={observationIcons[item.title] || "info"} // fallback if not found
+                  size={20}
+                  color="#4a7c7c"
+                />
+              </Text>
+              <Text style={styles.cardText}>{item.text}</Text>
+            </View>
+          ))}
       </View>
     </View>
   );
@@ -76,7 +99,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#C1CDC4",
     borderRadius: 30,
     padding: 24,
-    margin: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     gap: 10,
   },
   heading: {

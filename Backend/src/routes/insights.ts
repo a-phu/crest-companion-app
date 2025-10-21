@@ -7,13 +7,13 @@ import { openai } from '../OpenaiClient';
 const router = Router();
 
 /** sanity ping */
-router.get('/__ping', (_req, res) => res.json({ ok: true, scope: 'insights' }));
+router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "insights" }));
 
 /**
  * GET /api/insights
  * Returns the latest stored insights from the database
  */
-router.get('/', async (_req, res) => {
+router.get("/", async (_req, res) => {
   try {
     console.log('Fetching latest insights for user:', HUMAN_ID);
 
@@ -90,15 +90,15 @@ async function generateInsights() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const { data: messages, error } = await supa
-      .from('message')
-      .select('*')
+      .from("message")
+      .select("*")
       .or(
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
-        `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
+          `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
-      .eq('is_important', true)
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .order('created_at', { ascending: true });
+      .eq("is_important", true)
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
 
@@ -154,22 +154,25 @@ Guidelines:
 Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: "gpt-4o-mini",
       temperature: 0.3,
-      response_format: { type: 'json_object' },
+      response_format: { type: "json_object" },
       max_tokens: 800,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Analyze this conversation history and generate personalized wellness insights:\n\n${conversationContext}` }
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Analyze this conversation history and generate personalized wellness insights:\n\n${conversationContext}`,
+        },
       ],
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? '{}';
+    const raw = completion.choices?.[0]?.message?.content ?? "{}";
     const insights = JSON.parse(raw);
 
     // Validate the response structure
     if (!insights.observations || !insights.nextActions || !insights.reveal) {
-      throw new Error('Invalid insights response structure');
+      throw new Error("Invalid insights response structure");
     }
 
     const generationTime = Date.now() - startTime;

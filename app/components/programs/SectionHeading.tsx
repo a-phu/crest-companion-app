@@ -15,7 +15,7 @@ type SectionHeadingProps = {
 };
 
 const sectionColors: Record<ProgramSchedule, string> = {
-  [ProgramSchedule.Today]: "#425C56",
+  [ProgramSchedule.Today]: "#fff",
   [ProgramSchedule.ThisWeek]: "#fff",
   [ProgramSchedule.NextWeek]: "#fff",
 };

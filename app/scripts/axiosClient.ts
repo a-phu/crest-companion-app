@@ -1,18 +1,9 @@
 import axios from "axios";
 
-import { Platform } from 'react-native';
-
-// 👇 Dynamic baseURL based on platform
-const getBaseURL = () => {
-  if (Platform.OS === 'android') {
-    return "http://192.168.1.130:8080/api";  // Android emulator
-  }
-  return "http://localhost:8080/api";
-};
-
+// 👇 On Android emulator, use 10.0.2.2 instead of localhost
 const api = axios.create({
-  baseURL: getBaseURL(),
-  timeout: 90000, // optional: 90 seconds
+  baseURL: "http://localhost:8080/api",
+  timeout: 90000, // optional: 5 seconds
   headers: {
     "Content-Type": "application/json",
   },
