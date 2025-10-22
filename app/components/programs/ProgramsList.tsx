@@ -81,50 +81,74 @@ const ProgramsList: React.FC<ProgramsListProps> = ({ programPeriods }) => {
   };
 
   // --- Flatten all ProgramDays from ProgramPeriods ---
+  // const allDays = programPeriods.flatMap((period) => {
+  //   const metadata = period.period_json.metadata;
+  //   const moduleType = mapPlanTypeToProgramType(metadata.plan_type);
+  //   period.period_json.days.map((day) => {
+  //     console.log(`day: ${day.blocks}`);
+  //   });
+
+  //   return period.period_json.days.map((day) => ({
+  //     ...day,
+  //     moduleType,
+  //     programStartDate: new Date(period.start_date),
+  //   }));
+  // });
+
   const allDays = programPeriods.flatMap((period) => {
+    if (!period?.period_json?.days) {
+      console.warn("⚠️ Missing days in period:", period.program_id);
+      return [];
+    }
+
     const metadata = period.period_json.metadata;
     const moduleType = mapPlanTypeToProgramType(metadata.plan_type);
 
-    return period.period_json.days.map((day) => ({
-      ...day,
-      moduleType,
-      programStartDate: new Date(period.start_date),
-    }));
+    // Log each day to verify
+    console.log(
+      `📅 Period ${period.program_id} has ${period.period_json.days.length} days`
+    );
+
+    // ✅ RETURN the mapped array!
+    return period.period_json.days.map((day) => {
+      console.log(
+        `   → Day ${day.days_from_today} | ${day.date} | Blocks:`,
+        day.blocks?.length || 0
+      );
+      return {
+        ...day,
+        moduleType,
+        programStartDate: new Date(period.start_date),
+      };
+    });
   });
 
   // --- Categorize by Schedule ---
-  const todayPrograms = allDays.filter((day) =>
-    isSameDay(new Date(day.date), today)
+  // --- Categorize by Schedule (relative to program start) ---
+  const todayPrograms = allDays.filter((day) => day.days_from_today === 0);
+
+  const thisWeekPrograms = allDays.filter(
+    (day) => day.days_from_today > 0 && day.days_from_today <= 6
   );
 
-  const thisWeekPrograms = allDays.filter((day) => {
-    const d = new Date(day.date);
-    return (
-      d >= startOfWeek &&
-      d <= endOfWeek &&
-      !isSameDay(new Date(day.date), today)
-    );
-  });
-
-  const nextWeekPrograms = allDays.filter((day) => {
-    const d = new Date(day.date);
-    return d >= startOfNextWeek && d <= endOfNextWeek;
-  });
+  const nextWeekPrograms = allDays.filter(
+    (day) => day.days_from_today > 6 && day.days_from_today <= 13
+  );
 
   // --- Renderer ---
   const renderSection = (
     title: string,
     schedule: ProgramSchedule,
-    days: any[]
+    programDays: any[]
   ) => (
     <View style={styles.section}>
       <SectionHeading title={title} schedule={schedule} />
-      {days.length > 0 ? (
-        days.map((day, index) => (
+      {programDays.length > 0 ? (
+        programDays.map((day, index) => (
           <ProgramCard
             key={`${schedule}-${index}`}
             moduleType={day.moduleType}
-            title={`Day ${day.days_from_today}: ${day.moduleType} Plan`}
+            title={`Day ${day.days_from_today + 1}: ${day.moduleType} Plan`}
             content={Array.isArray(day.blocks) ? day.blocks.join("\n\n") : ""}
           />
         ))

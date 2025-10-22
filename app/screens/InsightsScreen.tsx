@@ -56,7 +56,7 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   useEffect(() => {
     console.log(`isVisible ${isVisible}`);
     if (fontsLoaded && insights == null) {
-      fetchInsights();
+      // fetchInsights();
     }
   }, [fontsLoaded]);
 
