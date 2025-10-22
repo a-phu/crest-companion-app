@@ -5,7 +5,7 @@ const client = new OpenAI({
 });
 
 const response = await client.responses.create({
-  model: "gpt-4o-mini",
+  model: "ggpt-4.1-nano",
   input: "Write a one-sentence bedtime story about a unicorn.",
 });
 

@@ -12,16 +12,20 @@ export type ImportanceResult = {
 /** Coerce/validate agent_type coming back from the model */
 function normalizeAgentType(value: unknown): AgentType {
   if (typeof value !== "string") return "other";
-  const ix = AGENT_TYPES.findIndex((t) => t.toLowerCase() === value.toLowerCase());
+  const ix = AGENT_TYPES.findIndex(
+    (t) => t.toLowerCase() === value.toLowerCase()
+  );
   return ix >= 0 ? AGENT_TYPES[ix] : "other";
 }
 
 /** Classify a single message for importance + agent_type (strict JSON). */
-export async function classifyImportance(content: string): Promise<ImportanceResult> {
+export async function classifyImportance(
+  content: string
+): Promise<ImportanceResult> {
   const input = (content ?? "").slice(0, 2000);
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-nano",
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: IMPORTANCE_PROMPT },

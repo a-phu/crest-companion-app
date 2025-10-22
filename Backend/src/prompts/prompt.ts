@@ -15,7 +15,6 @@ When the user asks for a program/plan, output a structured plan with:
 Prefer clear lists over paragraphs.
 `;
 
-
 // Intent detector (strict JSON). Decide if we should create a program now.
 export const PROGRAM_INTENT_PROMPT = `
 You are an intent detector for creating programs.
@@ -67,8 +66,6 @@ Mark important=true if the message should affect future coaching decisions (e.g.
 Keep reason ≤ 15 words.
 `;
 
-
-
 // Program-day generator (strict JSON; no "kind" fields).
 export const BUILD_PROGRAM_DAYS_PROMPT = `
 You generate periodized programs as STRICT JSON.
@@ -76,18 +73,18 @@ You generate periodized programs as STRICT JSON.
 Return ONLY this shape:
 {
   "days": [
-    { "notes": STRING, "blocks": [ OBJECT, ... ] },
+    { "notes": STRING, "blocks": [ MARKDOWN_STRING, ... ] },
     ...
   ]
 }
 
 Hard rules:
+- Each element in "blocks" is a Markdown-formatted string.
 - Output exactly (weeks * 7) items in "days".
 - NEVER include a "kind" field anywhere.
 - "notes" is concise (≤ 80 chars).
-- "blocks" is an array of PLAIN OBJECTS (no arrays inside unless necessary).
-- Keys are short strings; values are string | number | boolean | small object.
-- English only. No prose outside JSON.
+- Markdown should be clean and human-readable — no JSON inside the Markdown.
+- English only. No prose or explanations outside the JSON.
 
 Context you receive in the user message:
 {
@@ -101,36 +98,82 @@ Context you receive in the user message:
   }
 }
 
-Guidance by agent:
-- Training: compose days with 2–5 lifts or conditioning items per day using objects like:
-  { "name": "Bench Press", "sets": 3, "reps": "6–8", "rest_sec": 120 }
-  or { "name": "Push-ups", "sets": 4, "reps": "8–12", "tempo": "2011" }
-  Balance push/pull/legs across the week. Respect hints.days_per_week. If hints.modalities include grappling/striking, moderate fatigue on those days. Sprinkle core/mobility sometimes.
+Guidance by agent (for Markdown formatting):
 
-- Nutrition: use meal/habit objects, e.g.:
-  { "meal": "High-protein breakfast", "macros": { "kcal": 450, "p": 35, "c": 40, "f": 15 } }
-  or { "habit": "2L water" }
+- **Training:**  
+  Compose each day with 2–5 lifts or conditioning items, using short Markdown sections like:  
+  \`\`\`markdown
+  ### Bench Press  
+  **Sets:** 3 **Reps:** 6–8 **Rest:** 120 s  
 
-- Sleep: use routines/tasks, e.g.:
-  { "sleep_task": "Anchor wake", "time": "06:45" }
-  { "habit": "No screens 60m pre-bed" }
+  ### Push-ups  
+  **Sets:** 4 **Reps:** 8–12 **Tempo:** 2011  
+  \`\`\`
+  - Balance push/pull/legs across the week.  
+  - Respect \`hints.days_per_week\`.  
+  - If \`hints.modalities\` include grappling or striking, moderate fatigue on those days.  
+  - Occasionally include mobility or core work.
 
-- Other agents: output useful habit/task objects aligned to the agent topic and the hints.
+- **Nutrition:**  
+  Use Markdown to describe meals or habits, for example:  
+  \`\`\`markdown
+  ### Meal: High-protein breakfast  
+  **Calories:** 450 kcal **Protein:** 35 g **Carbs:** 40 g **Fat:** 15 g  
+
+  ### Habit  
+  Drink **2 L water** throughout the day.
+  \`\`\`
+
+- **Sleep:**  
+  Use Markdown to describe routines or habits, for example:  
+  \`\`\`markdown
+  ### Sleep Task  
+  Anchor wake time at **06:45**
+
+  ### Habit  
+  No screens **60 min before bed**
+  \`\`\`
+
+- **Other agents:**  
+  Use short Markdown text for practical habits, reflections, or tasks aligned with the agent topic and hints.
 
 Progression:
-- Weeks 1→N should trend from conservative to moderate volume/intensity, not maximal.
+- Weeks 1→N should trend from conservative to moderate volume/intensity, never maximal.
 
 Safety and clarity:
-- Prefer simple fields; avoid jargon.
-- Do NOT add commentary, explanations, or markdown outside the JSON.
+- Keep Markdown simple and consistent.
+- Avoid unnecessary prose or meta-commentary.
+- Do NOT include explanations or any text outside the top-level JSON.
 `;
+
+// export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
+//   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
+//   "Absolutely NO prose, NO markdown, only JSON.",
+//   "Return exactly ${totalDays} items in 'days'.",
+//   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
+//   "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
+//   "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",
+//   "Never add a field named 'kind'. Keep the schema minimal and flexible.",
+// ].join("\n");
 
 export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
-  "Absolutely NO prose, NO markdown, only JSON.",
   "Return exactly ${totalDays} items in 'days'.",
   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
   "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
-  "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",
-  "Never add a field named 'kind'. Keep the schema minimal and flexible."
+  "",
+  // --- Core markdown guidance ---
+  "Each day contains a 'blocks' array.",
+  "Each entry in 'blocks' is a single Markdown-formatted string that describes one activity, task, habit, or routine.",
+  "",
+  "Examples of valid block Markdown strings:",
+  '  - Training:  "### Bench Press\\n**Sets:** 3 **Reps:** 8–10 **Rest:** 120s"',
+  '  - Nutrition: "### Breakfast\\n**Meal:** High-protein oats **Calories:** 450 **Protein:** 35g"',
+  '  - Sleep:     "### Evening Routine\\nNo screens 60 min before bed"',
+  "",
+  "Markdown syntax is limited to headings (###), bold (**), bullet lists, and short plain text. Avoid long paragraphs.",
+  "Do NOT emit any JSON objects, arrays, or nested structures inside the Markdown.",
+  "Do NOT add a field named 'kind'. Keep all other fields minimal and consistent with the JSON schema.",
+  "",
+  "Output must be valid JSON and parse successfully. No prose or explanations outside the JSON.",
 ].join("\n");
