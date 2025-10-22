@@ -68,6 +68,10 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
     return <Text>Loading...</Text>;
   }
 
+  function toTitleCase(str: string): string {
+    return str.toLowerCase().replace(/\b(\w)/g, (s) => s.toUpperCase());
+  }
+
   return (
     <View style={styles.card}>
       <ImageBackground
@@ -76,7 +80,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
         imageStyle={styles.imageStyle}
       >
         <View style={styles.overlayRow}>
-          <Text style={styles.titleOverlay}>{title}</Text>
+          <Text style={styles.titleOverlay}>{toTitleCase(title)}</Text>
 
           <TouchableOpacity onPress={toggleExpand}>
             <Text style={styles.moreOverlay}>{expanded ? "" : "╋"}</Text>
@@ -182,6 +186,37 @@ const markdownStyles = StyleSheet.create({
   list_item: {
     flexDirection: "row",
     marginBottom: 4,
+  },
+  heading3: {
+    fontSize: 16,
+    color: "#425C56",
+    fontFamily: "Quicksand_600SemiBold",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  paragraph: {
+    fontSize: 14,
+    color: "#425C56",
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+  strong: {
+    fontFamily: "Quicksand_600SemiBold",
+    color: "#2E3D37",
+  },
+  em: {
+    color: "#6A8079",
+    fontStyle: "italic",
+    fontFamily: "Quicksand_400Regular",
+  },
+  hr: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E6E4",
+    marginVertical: 12,
+  },
+  // Inline separators (|) look cleaner with letter spacing
+  text: {
+    letterSpacing: 0.2,
   },
 });
 

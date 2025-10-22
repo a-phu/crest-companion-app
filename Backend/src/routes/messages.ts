@@ -8,20 +8,23 @@ import axios from "axios";
 const router = Router();
 
 // Helper function to trigger insights generation
-async function triggerInsightsGeneration() {
+export async function triggerInsightsGeneration() {
   try {
     // Make internal API call to generate insights
-    const response = await axios.post('http://localhost:8080/api/insights/generate');
-    console.log('Insights generation triggered successfully:', response.data.message);
+    const response = await axios.post(
+      "http://localhost:8080/api/insights/generate"
+    );
+    console.log(
+      "Insights generation triggered successfully:",
+      response.data.message
+    );
   } catch (error: any) {
-    console.error('Failed to trigger insights generation:', error.message);
+    console.error("Failed to trigger insights generation:", error.message);
   }
 }
 
 /** sanity ping */
-router.get("/__ping", (_req, res) =>
-  res.json({ ok: true, scope: "messages" })
-);
+router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "messages" }));
 
 /**
  * POST /api/messages/send
@@ -61,13 +64,19 @@ router.post("/send", async (req, res) => {
     if (error) throw error;
 
     // If message is marked as important, trigger insights generation in background
-    if (important) {
-      console.log('Important message detected, triggering insights generation...');
-      // Trigger insights generation asynchronously (don't wait for it)
-      triggerInsightsGeneration().catch((err: any) => {
-        console.error('Background insights generation failed:', err);
-      });
-    }
+    // if (important) {
+    //   console.log(
+    //     "Important message detected, triggering insights generation..."
+    //   );
+    //   // Trigger insights generation asynchronously (don't wait for it)
+    //   triggerInsightsGeneration().catch((err: any) => {
+    //     console.error("Background insights generation failed:", err);
+    //   });
+    // }
+
+    triggerInsightsGeneration().catch((err: any) => {
+      console.error("Background insights generation failed:", err);
+    });
 
     res.json({ ...data, importance: { important, agent_type, reason } });
   } catch (e: any) {
@@ -88,6 +97,50 @@ router.get("/thread", async (_req, res) => {
         `and(sender_id.eq.${HUMAN_ID},receiver_id.eq.${AI_ID}),` +
           `and(sender_id.eq.${AI_ID},receiver_id.eq.${HUMAN_ID})`
       )
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(data ?? []);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
+router.get("/periods", async (_req, res) => {
+  try {
+    const { data, error } = await supa
+      .from("program_period")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(data ?? []);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
+router.get("/programs", async (_req, res) => {
+  try {
+    const { data, error } = await supa
+      .from("program")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(data ?? []);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
+router.get("/:programId", async (req, res) => {
+  try {
+    const programId = String(req.params.programId);
+    const { data, error } = await supa
+      .from("program_period")
+      .select("*")
+      .eq("program_id", programId)
       .order("created_at", { ascending: true });
 
     if (error) throw error;

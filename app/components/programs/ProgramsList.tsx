@@ -1,7 +1,13 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import ProgramCard from "./ProgramCard";
-import { Program, ProgramSchedule, ProgramType } from "../../utils/program";
+import {
+  Program,
+  ProgramSchedule,
+  ProgramType,
+  mapPlanTypeToProgramType,
+} from "../../utils/program";
+import { ProgramPeriod } from "../../utils/programPeriod";
 import SectionHeading from "./SectionHeading";
 import {
   useFonts,
@@ -11,114 +17,20 @@ import {
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
 
-const programs = [
-  new Program(
-    ProgramType.Fitness,
-    "Fitness Plan – Strength",
-    ProgramSchedule.Today,
-    `
-## Exercises
-- Squat – 3 sets of 5 reps
-- Bench Press – 3 sets of 5 reps
-- Barbell Row – 3 sets of 8 reps
-- Plank – 3 sets of 30–60 sec
+// export enum ProgramSchedule {
+//   Today = "Today",
+//   ThisWeek = "ThisWeek",
+//   NextWeek = "NextWeek",
+// }
 
-## Additional Notes
-- Warm-up before workouts (5–10 mins cardio + light sets).
-- Core/Assistance: 30–60 seconds
-- Compound lifts: 1.5–3 minutes
-- Stretch or do mobility work after workouts.
-    `
-  ),
-  new Program(
-    ProgramType.Nutrition,
-    "Nutrition Plan – Balanced",
-    ProgramSchedule.Today,
-    `
-## Guidelines
-- Eat whole foods: fruits, vegetables, lean proteins
-- Stay hydrated
-- Limit processed foods
+// --- Props ---
+type ProgramsListProps = {
+  programPeriods: ProgramPeriod[];
+};
 
-## Notes
-- Prep meals ahead of time
-- Avoid skipping breakfast
-    `
-  ),
-  new Program(
-    ProgramType.Cognition,
-    "Cognition Plan – Focus",
-    ProgramSchedule.Today,
-    `
-## Exercises
-- Daily mindfulness: 10 minutes
-- Journaling: 5–10 minutes
-- Brain games or puzzles: 15 minutes
-
-## Notes
-- Practice single-tasking
-- Reduce digital distractions
-    `
-  ),
-  new Program(
-    ProgramType.Clinical,
-    "Clinical Plan – Check-ins",
-    ProgramSchedule.Today,
-    `
-## Appointments
-- Regular GP check-up
-- Specialist consultation (if required)
-- Medication tracking
-
-## Notes
-- Follow reminders set by healthcare provider
-- Report side effects early
-    `
-  ),
-  new Program(
-    ProgramType.Mental,
-    "Mental Plan – Wellbeing",
-    ProgramSchedule.ThisWeek,
-    `
-## Practices
-- Daily gratitude journaling
-- Weekly therapy session
-- Relaxation routine (music, nature walks)
-
-## Notes
-- Prioritize sleep
-- Stay socially connected
-    `
-  ),
-  new Program(
-    ProgramType.Identity,
-    "Identity Plan – Self Development",
-    ProgramSchedule.ThisWeek,
-    `
-## Activities
-- Explore personal values
-- Creative expression (art, writing, music)
-- Volunteer or join a community group
-
-## Notes
-- Reflect on progress weekly
-- Celebrate small wins
-    `
-  ),
-];
-
-const todayPrograms = programs.filter(
-  (p) => p.schedule === ProgramSchedule.Today
-);
-const thisWeekPrograms = programs.filter(
-  (p) => p.schedule === ProgramSchedule.ThisWeek
-);
-const nextWeekPrograms = programs.filter(
-  (p) => p.schedule === ProgramSchedule.NextWeek
-);
-
-const ProgramsList: React.FC = () => {
-  let [fontsLoaded] = useFonts({
+// --- Component ---
+const ProgramsList: React.FC<ProgramsListProps> = ({ programPeriods }) => {
+  const [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
     Quicksand_500Medium,
@@ -129,61 +41,107 @@ const ProgramsList: React.FC = () => {
     return <Text>Loading...</Text>;
   }
 
+  // --- Date Helpers ---
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+
+  const startOfNextWeek = new Date(endOfWeek);
+  startOfNextWeek.setDate(endOfWeek.getDate() + 1);
+  const endOfNextWeek = new Date(startOfNextWeek);
+  endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+
+  // --- Utility ---
+  const isSameDay = (a: Date, b: Date): boolean =>
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear();
+
+  const mapPlanTypeToProgramType = (planType: string): ProgramType => {
+    const normalized = planType.toLowerCase();
+
+    if (normalized.includes("train") || normalized.includes("fitness"))
+      return ProgramType.Training;
+    if (normalized.includes("nutrition") || normalized.includes("diet"))
+      return ProgramType.Nutrition;
+    if (normalized.includes("cogn") || normalized.includes("focus"))
+      return ProgramType.Cognition;
+    if (normalized.includes("clinical") || normalized.includes("rehab"))
+      return ProgramType.Clinical;
+    if (normalized.includes("mind") || normalized.includes("mental"))
+      return ProgramType.Mental;
+    if (normalized.includes("identity")) return ProgramType.Identity;
+    if (normalized.includes("sleep")) return ProgramType.Sleep;
+    if (normalized.includes("body") || normalized.includes("physical"))
+      return ProgramType.Fitness;
+
+    return ProgramType.Training;
+  };
+
+  // --- Flatten all ProgramDays from ProgramPeriods ---
+  const allDays = programPeriods.flatMap((period) => {
+    const metadata = period.period_json.metadata;
+    const moduleType = mapPlanTypeToProgramType(metadata.plan_type);
+
+    return period.period_json.days.map((day) => ({
+      ...day,
+      moduleType,
+      programStartDate: new Date(period.start_date),
+    }));
+  });
+
+  // --- Categorize by Schedule ---
+  const todayPrograms = allDays.filter((day) =>
+    isSameDay(new Date(day.date), today)
+  );
+
+  const thisWeekPrograms = allDays.filter((day) => {
+    const d = new Date(day.date);
+    return (
+      d >= startOfWeek &&
+      d <= endOfWeek &&
+      !isSameDay(new Date(day.date), today)
+    );
+  });
+
+  const nextWeekPrograms = allDays.filter((day) => {
+    const d = new Date(day.date);
+    return d >= startOfNextWeek && d <= endOfNextWeek;
+  });
+
+  // --- Renderer ---
+  const renderSection = (
+    title: string,
+    schedule: ProgramSchedule,
+    days: any[]
+  ) => (
+    <View style={styles.section}>
+      <SectionHeading title={title} schedule={schedule} />
+      {days.length > 0 ? (
+        days.map((day, index) => (
+          <ProgramCard
+            key={`${schedule}-${index}`}
+            moduleType={day.moduleType}
+            title={`Day ${day.days_from_today}: ${day.moduleType} Plan`}
+            content={Array.isArray(day.blocks) ? day.blocks.join("\n\n") : ""}
+          />
+        ))
+      ) : (
+        <Text style={styles.empty}>
+          No programs scheduled for {title.toLowerCase()}.
+        </Text>
+      )}
+    </View>
+  );
+
+  // --- Render ---
   return (
     <ScrollView>
-      <View style={styles.section}>
-        <SectionHeading title={"Today"} schedule={ProgramSchedule.Today} />
-        {todayPrograms.length > 0 ? (
-          todayPrograms.map((program, index) => (
-            <ProgramCard
-              key={`today-${index}`}
-              moduleType={program.type}
-              title={program.title}
-              content={program.content}
-            />
-          ))
-        ) : (
-          <Text style={styles.empty}>No programs scheduled for today.</Text>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <SectionHeading
-          title={"This Week"}
-          schedule={ProgramSchedule.ThisWeek}
-        />
-        {thisWeekPrograms.length > 0 ? (
-          thisWeekPrograms.map((program, index) => (
-            <ProgramCard
-              key={`week-${index}`}
-              moduleType={program.type}
-              title={program.title}
-              content={program.content}
-            />
-          ))
-        ) : (
-          <Text style={styles.empty}>No programs scheduled for this week.</Text>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <SectionHeading
-          title={"Next Week"}
-          schedule={ProgramSchedule.NextWeek}
-        />
-        {nextWeekPrograms.length > 0 ? (
-          nextWeekPrograms.map((program, index) => (
-            <ProgramCard
-              key={`next-${index}`}
-              moduleType={program.type}
-              title={program.title}
-              content={program.content}
-            />
-          ))
-        ) : (
-          <Text style={styles.empty}>No programs scheduled for next week.</Text>
-        )}
-      </View>
+      {renderSection("Today", ProgramSchedule.Today, todayPrograms)}
+      {renderSection("This Week", ProgramSchedule.ThisWeek, thisWeekPrograms)}
+      {renderSection("Next Week", ProgramSchedule.NextWeek, nextWeekPrograms)}
     </ScrollView>
   );
 };

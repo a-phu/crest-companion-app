@@ -14,7 +14,7 @@ import ChatBubble from "../components/chat/ChatBubble";
 import type { Message } from "../utils/message";
 import CrestAppBar from "../components/CrestAppBar";
 import MessageHistory from "../utils/messageHistory";
-
+import { useProgramPeriods } from "../hooks/useProgramPeriods";
 import {
   useFonts,
   Quicksand_300Light,
@@ -22,8 +22,9 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
-
+import { useInsights } from "../hooks/useInsights";
 import api from "../scripts/axiosClient";
+
 // UUIDs for identifying user vs. assistant
 const USER_ID = "b9576a32-334b-4444-866e-4ec176d377ff";
 const ASSISTANT_ID = "61a72b2b-9fac-4cba-bd02-aa6252765b39";
@@ -40,6 +41,9 @@ const ChatbotScreen = () => {
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   };
+
+  const { periods, error, fetchProgramPeriods } = useProgramPeriods();
+  const { insights, fetchInsights } = useInsights();
 
   const fetchChatHistory = async (): Promise<Message[]> => {
     try {
@@ -77,13 +81,29 @@ const ChatbotScreen = () => {
   };
 
   // Stub for assistant reply (replace with API call)
-  const fetchAssistantReply = async (message: string): Promise<string> => {
+
+  const fetchAssistantReply = async (
+    message: string,
+    assistantId: string
+  ): Promise<Message> => {
     try {
       const response = await api.post(
         "/chat/b9576a32-334b-4444-866e-4ec176d377ff",
         { text: message }
       );
-      return response.data.reply;
+
+      // Assuming your backend returns { reply: string }
+      const reply = response.data.reply;
+
+      const assistantMessage: Message = {
+        id: genId(), // or use uuidv4() if you have uuid lib
+        role: "assistant",
+        content: reply,
+        createdAt: Date.now(),
+        important: false,
+      };
+
+      return assistantMessage;
     } catch (error) {
       console.error("Error sending message:", error);
       throw error;
@@ -99,6 +119,7 @@ const ChatbotScreen = () => {
       role: "user",
       content: trimmed,
       createdAt: Date.now(),
+      important: false,
     };
 
     // Show user message immediately
@@ -114,21 +135,29 @@ const ChatbotScreen = () => {
         role: "assistant",
         content: "", // or "Assistant is typing"
         createdAt: Date.now(),
+        important: false,
       },
     ]);
 
     try {
       setLoading(true);
-      const reply = await fetchAssistantReply(trimmed);
+      const messageReply = await fetchAssistantReply(trimmed, typingId);
 
       // Replace the typing bubble with the real reply
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === typingId
-            ? { ...m, content: reply, createdAt: Date.now() }
-            : m
-        )
-      );
+      // setMessages((prev) =>
+      //   prev.map((m) =>
+      //     m.id === typingId
+      //       ? { ...m, content: reply, createdAt: Date.now(), important: important}
+      //       : m
+      //   )
+      // );
+
+      setMessages((prev) => [...prev, messageReply]);
+
+      if (messageReply.important == true) {
+        fetchProgramPeriods();
+        useInsights();
+      }
     } catch (e) {
       setMessages((prev) =>
         prev.map((m) =>

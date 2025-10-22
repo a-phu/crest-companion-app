@@ -64,7 +64,7 @@ export async function buildProgramDaysMarkdown(
   // 1) Call OpenAI (expect Markdown in `blocks`)
   const t0 = process.hrtime.bigint();
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-nano",
+    model: "gpt-4.1-mini",
     temperature: 0.7,
     response_format: { type: "text" },
     messages: [

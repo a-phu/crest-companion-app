@@ -26,8 +26,14 @@ const JSON_SCHEMA = {
           plan_type: { type: "string" },
           cadence_days_per_week: { type: "integer" },
           rationale: { type: "string" },
+          start_date: {
+            type: "string",
+            format: "date",
+            description:
+              "The ISO start date for the first day of the program (e.g., 2025-10-22).",
+          },
         },
-        required: ["plan_type", "cadence_days_per_week"],
+        required: ["plan_type", "cadence_days_per_week", "start_date"],
       },
       days: {
         type: "array",
@@ -40,7 +46,20 @@ const JSON_SCHEMA = {
             intensity: { type: ["string", "number"] },
             tags: { type: "array", items: { type: "string" } },
 
-            // ✅ Changed: blocks is now an array of Markdown strings
+            // 🆕 Scheduling fields
+            days_from_today: {
+              type: "integer",
+              description:
+                "Number of days from today this program day is scheduled for. 0 = today, 1 = tomorrow, etc.",
+            },
+            date: {
+              type: "string",
+              format: "date",
+              description:
+                "Exact ISO date for this program day, derived from start_date + days_from_today.",
+            },
+
+            // Markdown-based blocks
             blocks: {
               type: "array",
               description:
@@ -52,7 +71,7 @@ const JSON_SCHEMA = {
               },
             },
           },
-          required: ["active", "notes", "blocks"],
+          required: ["active", "notes", "blocks", "days_from_today", "date"],
         },
       },
     },
@@ -179,7 +198,7 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
   };
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-nano",
+    model: "gpt-4.1-mini",
     temperature: 0.2,
     response_format: { type: "json_schema", json_schema: JSON_SCHEMA },
     messages: [

@@ -20,30 +20,16 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
-
-type InsightsData = {
-  observations: {
-    cognition: string;
-    identity: string;
-    mind: string;
-    clinical: string;
-    nutrition: string;
-    training: string;
-    body: string;
-    sleep: string;
-  };
-  nextActions: Array<{
-    title: string;
-    text: string;
-  }>;
-  reveal: string;
-};
+import { InsightsData } from "../utils/insightsData";
+import { useInsights } from "../hooks/useInsights";
 
 const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
-  const [insights, setInsights] = useState<InsightsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  // const [insights, setInsights] = useState<InsightsData | null>(null);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
+  // const [refreshing, setRefreshing] = useState(false);
+  const { insights, loading, error, refreshing, setRefreshing, fetchInsights } =
+    useInsights();
 
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -52,27 +38,27 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
     Quicksand_600SemiBold,
   });
 
-  const fetchInsights = useCallback(async () => {
-    try {
-      if (!refreshing) setLoading(true);
-      const response = await api.get("/insights");
-      setInsights(response.data);
-      setError(null);
-    } catch (err: any) {
-      console.error("Failed to fetch insights:", err);
-      setError("Failed to load insights. Please try again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [refreshing]);
+  // const fetchInsights = useCallback(async () => {
+  //   try {
+  //     if (!refreshing) setLoading(true);
+  //     const response = await api.get("/insights");
+  //     setInsights(response.data);
+  //     setError(null);
+  //   } catch (err: any) {
+  //     console.error("Failed to fetch insights:", err);
+  //     setError("Failed to load insights. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // }, [refreshing]);
 
   useEffect(() => {
     console.log(`isVisible ${isVisible}`);
-    if (isVisible && fontsLoaded) {
-      // fetchInsights();
+    if (fontsLoaded && insights == null) {
+      fetchInsights();
     }
-  }, [isVisible, fontsLoaded, fetchInsights]);
+  }, [fontsLoaded]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -123,9 +109,9 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <ObservationsModule observations={insights.observations} />
-          <RevealModule reveal={insights.reveal} />
-          <NextActionsModule actions={insights.nextActions} />
+          <ObservationsModule observations={insights.insights.observations} />
+          <RevealModule reveal={insights.insights.reveal} />
+          <NextActionsModule actions={insights.insights.nextActions} />
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>

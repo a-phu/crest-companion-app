@@ -10,6 +10,28 @@ export enum ProgramType {
   Training = "training",
 }
 
+export function mapPlanTypeToProgramType(planType: string): ProgramType {
+  const normalized = planType.toLowerCase();
+
+  if (normalized.includes("train") || normalized.includes("fitness"))
+    return ProgramType.Training;
+  if (normalized.includes("nutrition") || normalized.includes("diet"))
+    return ProgramType.Nutrition;
+  if (normalized.includes("cogn") || normalized.includes("focus"))
+    return ProgramType.Cognition;
+  if (normalized.includes("clinical") || normalized.includes("rehab"))
+    return ProgramType.Clinical;
+  if (normalized.includes("mind") || normalized.includes("mental"))
+    return ProgramType.Mental;
+  if (normalized.includes("identity")) return ProgramType.Identity;
+  if (normalized.includes("sleep")) return ProgramType.Sleep;
+  if (normalized.includes("body") || normalized.includes("physical"))
+    return ProgramType.Fitness;
+
+  // Default fallback
+  return ProgramType.Training;
+}
+
 // Defines when the program is scheduled
 export enum ProgramSchedule {
   Today = "today",

@@ -17,31 +17,49 @@ Prefer clear lists over paragraphs.
 
 // Intent detector (strict JSON). Decide if we should create a program now.
 export const PROGRAM_INTENT_PROMPT = `
-You are an intent detector for creating programs.
+You are an intent detector for creating personalized programs.
 
 Return ONLY strict JSON:
 {
   "should_create": boolean,
-  "confidence": number,            // 0..1
-  "program_type": "training" | "nutrition" | "sleep" | "other",
+  "confidence": number,             // 0..1
+  "program_type": "Cognition" | "Identity" | "Mind" | "Clinical" | "Nutrition" | "Training" | "Body" | "Sleep" | "other",
   "parsed": {
-    "start_date": string|null,     // YYYY-MM-DD if present
-    "duration_weeks": number|null, // integer weeks if present
-    "days_per_week": number|null,  // optional hint
-    "modalities": string[]|null    // optional (e.g. ["BJJ","Muay Thai"])
+    "start_date": string,           // YYYY-MM-DD; defaults to today's date if not specified, or resolve relative phrases
+    "duration_weeks": number | null,
+    "days_per_week": number | null,
+    "modalities": string[] | null
   }
 }
 
 Guidance:
-- should_create=true only if the user is clearly asking for a program/plan/routine/template/schedule
-  or strongly implies “please make one for me now”.
-- If vague or conversational, set should_create=false.
-- Map physical training requests to "training", including:
-  * bodyweight / calisthenics / street workout / gymnastics-style progressions
-  * strength, hypertrophy, conditioning, running, cycling, rowing, swimming
-  * sport-support templates (e.g., BJJ, soccer, basketball) when the user asks for a plan
-- Use "nutrition" for diet/meals/macros plans; "sleep" for sleep routines; otherwise "other".
-- Fill parsed fields when explicitly provided; otherwise set null.
+- \`should_create=true\` only if the user clearly asks for or strongly implies wanting a program, plan, schedule, routine, or template (e.g. “make me a 4-week plan”).
+- If the user is vague, conversational, or reflective (not asking to generate a plan), set \`should_create=false\`.
+
+Program type mapping:
+- **Training:** workout programming, sets/reps, exercise selection, progression, or sport-specific plans (e.g. “strength plan”, “running program”, “BJJ conditioning”).
+- **Nutrition:** diet plans, calorie targets, macros, hydration, supplements, or meal structure.
+- **Clinical:** injuries, illness, pain management, surgery recovery, medications, or medically supervised routines.
+- **Body:** body composition goals, weight changes, soreness (non-clinical), mobility, or recovery protocols.
+- **Sleep:** sleep hygiene, insomnia solutions, bedtime routines, or improving rest/jet lag.
+- **Mind:** mindset, emotions, motivation, resilience, or stress management routines.
+- **Cognition:** focus, memory, concentration, attention, or mental clarity improvement programs.
+- **Identity:** long-term goals, values, self-concept, life direction, or transformation of habits and personal narrative.
+- **other:** anything that does not fit the above domains cleanly.
+
+Parsed field rules:
+- \`start_date\`:
+  - If the user explicitly specifies a date (e.g. “on November 2nd”, “starting January 10”), convert it to ISO format (YYYY-MM-DD).
+  - If the user specifies a **relative time** (e.g. “next Monday”, “in 3 days”, “starting tomorrow”, “in two weeks”), compute the exact ISO date based on today’s date.
+  - If no timing information is given, default to **today’s date** (in ISO format).
+- \`duration_weeks\`, \`days_per_week\`, and \`modalities\`:
+  - Extract only when clearly mentioned or implied (“4-week plan”, “5 days per week”, “running and yoga”).
+  - Otherwise set to null.
+
+Output format requirements:
+- Return ONLY valid JSON — no markdown, prose, or explanations.
+- Always include \`start_date\` as a valid ISO string.
+- Be concise, deterministic, and follow the schema exactly.
 `;
 
 // Importance + agent classifier (strict JSON) used by the pipeline.
@@ -157,23 +175,70 @@ Safety and clarity:
 // ].join("\n");
 
 export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
+  // --- Overview ---
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
+  "",
+  // --- Agent Type ---
+  "Every program must include a top-level property called 'agent_type', and each day in 'days' must also include an 'agent_type' field with the same value.",
+  "",
+  "Valid values for 'agent_type' are exactly one of the following:",
+  "  Cognition | Identity | Mind | Clinical | Nutrition | Training | Body | Sleep | other",
+  "",
+  "Agent classification guidance:",
+  "- Training: workout programming, sets/reps, exercise selection, progression, or physical conditioning plans.",
+  "- Nutrition: meals, calories, macros, hydration, or dietary structure and adjustments.",
+  "- Clinical: injuries, illness, pain management, surgery recovery, medications, or medical precautions.",
+  "- Body: body composition, measurements, weight changes, soreness (non-clinical), or recovery protocols.",
+  "- Sleep: sleep duration, quality, routines, jet lag, or insomnia improvement.",
+  "- Mind: stress management, emotional regulation, mindset, motivation, or resilience training.",
+  "- Cognition: focus, attention, memory, concentration, or cognitive performance enhancement.",
+  "- Identity: values, goals, self-concept, personal development, or long-term behavioral identity shifts.",
+  "- other: anything that does not clearly fit the above.",
+  "",
+  // --- Schedule Rules ---
   "Return exactly ${totalDays} items in 'days'.",
   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
-  "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
+  "Inactive days should still include helpful lighter/recovery/maintenance content appropriate to the agent_type.",
   "",
-  // --- Core markdown guidance ---
-  "Each day contains a 'blocks' array.",
-  "Each entry in 'blocks' is a single Markdown-formatted string that describes one activity, task, habit, or routine.",
+  // --- Day and Block Details ---
+  "Each day must include:",
+  "  • 'agent_type' (matching the program's agent_type)",
+  "  • 'notes' describing the day's intent or theme (≤120 chars)",
+  "  • 'blocks' as a structured Markdown list of specific items or exercises/tasks",
   "",
-  "Examples of valid block Markdown strings:",
-  '  - Training:  "### Bench Press\\n**Sets:** 3 **Reps:** 8–10 **Rest:** 120s"',
-  '  - Nutrition: "### Breakfast\\n**Meal:** High-protein oats **Calories:** 450 **Protein:** 35g"',
-  '  - Sleep:     "### Evening Routine\\nNo screens 60 min before bed"',
+  // --- Detailed Block Guidance ---
+  "When the user asks for a program or plan, ensure 'blocks' are detailed and structured:",
+  "  - Include duration (in weeks) and weekly schedule pattern.",
+  "  - For Training: list exercises with **Sets × Reps**, **Rest**, and **Progression Guidance** (e.g., 'Increase load +5% each week').",
+  "  - For Nutrition: include meals with **macros**, **hydration goals**, or **timing guidance**.",
+  "  - For Sleep: specify **bedtime routines**, **wake anchors**, or **screen limits**.",
+  "  - For Mind/Cognition/Identity: use concise, actionable habits or reflections (no long prose).",
+  "  - If the user mentions limited equipment or constraints (e.g., 'home gym', 'no weights'), include **variations** or **alternatives**.",
+  "  - Add **Safety/Form notes** for exercises or routines when applicable (e.g., 'Maintain neutral spine during deadlift').",
+  "",
+  "Prefer clear lists or short markdown bullet points over paragraphs.",
+  "",
+  // --- Markdown Syntax ---
+  "Each entry in 'blocks' must be a Markdown-formatted string describing one activity, exercise, task, or habit.",
+  "Examples of valid Markdown strings:",
+  "  - Training:  '### Bench Press\\n**Sets:** 3×8  | **Rest:** 120s  | **Progression:** +2.5kg per week\\n*Safety:* Keep shoulders retracted*'",
+  "  - Nutrition: '### Breakfast\\n**Meal:** High-protein oats | **Calories:** 450 | **Macros:** P:35g C:40g F:15g'",
+  "  - Sleep:     '### Evening Routine\\n**Habit:** No screens 60m before bed | **Target:** 22:30 lights out'",
   "",
   "Markdown syntax is limited to headings (###), bold (**), bullet lists, and short plain text. Avoid long paragraphs.",
-  "Do NOT emit any JSON objects, arrays, or nested structures inside the Markdown.",
-  "Do NOT add a field named 'kind'. Keep all other fields minimal and consistent with the JSON schema.",
   "",
+  // --- Scheduling Fields ---
+  "Each day must include scheduling fields:",
+  "  • 'days_from_today': integer starting at 0 and increasing by 1 for each subsequent day.",
+  "  • 'date': ISO-8601 formatted date (YYYY-MM-DD) calculated as metadata.start_date + days_from_today.",
+  "",
+  "For example, if metadata.start_date = '2025-10-22', then:",
+  "  - Day 1 → days_from_today: 0, date: '2025-10-22'",
+  "  - Day 2 → days_from_today: 1, date: '2025-10-23'",
+  "  - Day 3 → days_from_today: 2, date: '2025-10-24', etc.",
+  "",
+  // --- Output Rules ---
+  "Do NOT emit any JSON objects or nested structures inside Markdown.",
+  "Do NOT add a field named 'kind'. Keep all other fields minimal and consistent with the JSON schema.",
   "Output must be valid JSON and parse successfully. No prose or explanations outside the JSON.",
 ].join("\n");

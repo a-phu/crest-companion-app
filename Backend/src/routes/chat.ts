@@ -12,6 +12,7 @@ import {
 } from "../prompts/prompt";
 import { AgentType, agentToProgramType, isProgramCapable } from "../agents";
 import { buildProgramDaysUniversal } from "../universalProgram";
+import { triggerInsightsGeneration } from "./messages";
 
 const router = Router();
 
@@ -158,7 +159,7 @@ async function detectProgramIntent(
   const tomorrowISO = tomorrow.toISOString().slice(0, 10);
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-nano",
+    model: "gpt-4.1-mini",
     response_format: { type: "json_object" },
     temperature: 0,
     messages: [
@@ -770,7 +771,7 @@ router.post("/:humanId", async (req, res) => {
     // 6) Model call for the assistant reply
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       temperature: 0.3,
       max_tokens: 1000,
       messages,
@@ -820,6 +821,17 @@ router.post("/:humanId", async (req, res) => {
         if (upd1.error)
           P.mark("update_ai_msg_error", { error: upd1.error.message });
         else P.mark("update_ai_msg_ok");
+
+        // If message is marked as important, trigger insights generation in background
+        if (aiImp.important) {
+          console.log(
+            "Important message detected, triggering insights generation..."
+          );
+          // Trigger insights generation asynchronously (don't wait for it)
+          triggerInsightsGeneration().catch((err: any) => {
+            console.error("Background insights generation failed:", err);
+          });
+        }
       } catch (e: any) {
         P.mark("post_response_pipeline_error", { error: e?.message });
       }

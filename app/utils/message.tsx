@@ -3,4 +3,5 @@ export type Message = {
   role: "user" | "assistant" | "system";
   content: string;
   createdAt: number; // Date.now()
+  important: Boolean;
 };

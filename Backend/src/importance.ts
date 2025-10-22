@@ -25,7 +25,7 @@ export async function classifyImportance(
   const input = (content ?? "").slice(0, 2000);
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: IMPORTANCE_PROMPT },

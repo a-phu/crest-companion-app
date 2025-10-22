@@ -16,10 +16,18 @@ interface NextActionsModuleProps {
   }>;
 }
 
-const NextActionsModule: React.FC<NextActionsModuleProps> = ({ actions: actionsData }) => {
+const NextActionsModule: React.FC<NextActionsModuleProps> = ({
+  actions: actionsData,
+}) => {
   const actions = actionsData || [
-    { title: "Loading Action 1...", text: "Please wait while we generate your personalized recommendations." },
-    { title: "Loading Action 2...", text: "Your insights are being prepared based on your conversation history." },
+    {
+      title: "Loading Action 1...",
+      text: "Please wait while we generate your personalized recommendations.",
+    },
+    {
+      title: "Loading Action 2...",
+      text: "Your insights are being prepared based on your conversation history.",
+    },
   ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,

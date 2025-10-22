@@ -16,6 +16,7 @@ router.get("/__ping", (_req, res) => res.json({ ok: true, scope: "insights" }));
 router.get("/", async (_req, res) => {
   try {
     console.log("Fetching latest insights for user:", HUMAN_ID);
+    const result = await generateInsights();
 
     // Get the latest insights from database
     const { data: latestInsights, error } = await supa
@@ -165,7 +166,7 @@ Guidelines:
 Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       temperature: 0.3,
       response_format: { type: "json_object" },
       max_tokens: 800,
