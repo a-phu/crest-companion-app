@@ -3,6 +3,7 @@ import { Router, Request, Response } from 'express';
 import { supa } from '../supabase';
 import { HUMAN_ID, AI_ID } from '../id';
 import { openai } from '../OpenaiClient';
+import { INSIGHTS_SYSTEM_PROMPT } from '../prompts/prompt';
 
 const router = Router();
 
@@ -113,45 +114,7 @@ async function generateInsights() {
       return `${isUser ? 'User' : 'Assistant'}: ${msg.content}`;
     }).join('\n\n');
 
-    const systemPrompt = `You are a motivational wellness coach analyzing conversation history to generate personalized insights. Write in 2nd person (using "you", "your") with an encouraging, motivational tone.
-    
-Based on the conversation, provide insights in this EXACT JSON format:
-
-{
-  "observations": {
-    "cognition": "Motivational observation about your focus/mental clarity using 2nd person (1-2 sentences max)",
-    "identity": "Encouraging observation about your personal goals/values/purpose using 2nd person (1-2 sentences max)",
-    "mind": "Supportive observation about your mental health/stress/emotional patterns using 2nd person (1-2 sentences max)",
-    "clinical": "Caring observation about your health concerns/symptoms/medical patterns using 2nd person (1-2 sentences max)",
-    "nutrition": "Positive observation about your nutrition/eating habits using 2nd person (1-2 sentences max)",
-    "training": "Energizing observation about your exercise/physical activity patterns using 2nd person (1-2 sentences max)",
-    "body": "Affirming observation about your physical sensations/energy/body awareness using 2nd person (1-2 sentences max)",
-    "sleep": "Encouraging observation about your sleep patterns using 2nd person (1-2 sentences max)"
-  },
-  "nextActions": [
-    {
-      "title": "Motivational actionable title",
-      "text": "Clear, motivational action you can take using 2nd person (1-2 sentences)"
-    },
-    {
-      "title": "Another motivational actionable title", 
-      "text": "Another clear, encouraging action using 2nd person (1-2 sentences)"
-    }
-  ],
-  "reveal": "A deeper, motivational insight about patterns in your wellness journey using 2nd person (2-3 sentences that reveal something meaningful about your habits, challenges, or progress while encouraging you)"
-}
-
-Guidelines:
-- Use 2nd person throughout ("you", "your", "you've", "you're")
-- Write with a motivational, encouraging, supportive tone
-- Only include observations for categories mentioned in conversations
-- For missing categories, use motivational prompts to inspire tracking
-- Make next actions specific, immediately actionable, and encouraging
-- The reveal should identify meaningful patterns while being uplifting
-- Keep all text concise, personal, and motivational
-- Focus on their actual progress and potential, not generic advice
-
-Return ONLY valid JSON.`;
+    const systemPrompt = INSIGHTS_SYSTEM_PROMPT;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
