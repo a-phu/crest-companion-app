@@ -9,6 +9,7 @@ import {
   BASE_SYSTEM_PROMPT,
   TRAINING_PROGRAM_GUIDE,
   PROGRAM_INTENT_PROMPT,
+  OUT_OF_SCOPE_RESPONSE_PROMPT,
 } from "../prompts/prompt";
 import { AgentType, agentToProgramType, isProgramCapable } from "../agents";
 import { buildProgramDaysUniversal } from "../universalProgram";
@@ -755,6 +756,9 @@ router.post("/:humanId", async (req, res) => {
       userImp.agent_type === "Training"
     ) {
       systemPrompt += TRAINING_PROGRAM_GUIDE;
+    }
+    if (userImp.agent_type === "other") {
+      systemPrompt += OUT_OF_SCOPE_RESPONSE_PROMPT;
     }
     const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
