@@ -151,7 +151,7 @@ Return ONLY strict JSON:
 {
   "should_create": boolean,
   "confidence": number,            // 0..1
-  "program_type": "training" | "nutrition" | "sleep" | "other",
+  "program_type": "training" | "nutrition" | "sleep" | "mind" | "cognition" | "identity" | "clinical" | "body" | "other",
   "parsed": {
     "start_date": string|null,     // YYYY-MM-DD if present
     "duration_weeks": number|null, // integer weeks if present
@@ -168,7 +168,9 @@ Guidance:
   * bodyweight / calisthenics / street workout / gymnastics-style progressions
   * strength, hypertrophy, conditioning, running, cycling, rowing, swimming
   * sport-support templates (e.g., BJJ, soccer, basketball) when the user asks for a plan
-- Use "nutrition" for diet/meals/macros plans; "sleep" for sleep routines; otherwise "other".
+- Use "nutrition" for diet/meals/macros plans; "sleep" for sleep routines.
+- Map "meditation", "mindfulness", "relaxation", "breathing exercises" requests to "mind".
+- Otherwise "other".
 - Fill parsed fields when explicitly provided; otherwise set null.
 `;
 
@@ -185,7 +187,7 @@ Guidance for mapping:
 - Clinical: injuries, pain, illness, surgery, medications, medical cautions.
 - Body: body composition, measurements, weight changes, soreness (non-clinical), recovery protocols.
 - Sleep: sleep duration/quality, routines, insomnia, jet lag.
-- Mind: stress management, emotions, mindset, motivation tactics.
+- Mind: stress management, emotions, mindset, motivation tactics, meditation, mindfulness, relaxation, breathing exercises.
 - Cognition: focus, attention, memory, mental clarity and performance.
 - Identity: goals/values, self-narrative, long-term identity shifts.
 - other: anything that does not cleanly fit above (e.g., language learning, academic study, software/career/finance questions, entertainment planning, tech troubleshooting). Label these as out of scope so the assistant can redirect the user.
@@ -256,6 +258,7 @@ export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
   "Absolutely NO prose, NO markdown, only JSON.",
   "Return exactly ${totalDays} items in 'days'.",
+  "Each day MUST include a unique, descriptive 'title' summarizing the main focus or activity of that day.",
   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
   "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
   "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",
