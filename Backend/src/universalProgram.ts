@@ -35,6 +35,7 @@ const JSON_SCHEMA = {
           type: "object",
           additionalProperties: false,
           properties: {
+            title: { type: "string" }, // <-- Added title property
             active: { type: "boolean" },
             notes: { type: "string" },
             intensity: { type: ["string", "number"] },
@@ -72,6 +73,7 @@ function makeRecoveryDay(planType: string) {
   const t = planType.toLowerCase();
   if (t.includes("sleep")) {
     return {
+      title: "Recovery & Sleep", // <-- Added title
       active: false,
       notes: "Sleep hygiene & recovery",
       intensity: "easy",
@@ -94,6 +96,7 @@ function makeRecoveryDay(planType: string) {
   }
   if (t.includes("nutrition")) {
     return {
+      title: "Nutrition Recovery", // <-- Added title
       active: false,
       notes: "Nutrition recovery & hydration",
       intensity: "easy",
@@ -107,6 +110,7 @@ function makeRecoveryDay(planType: string) {
   }
   // default training / hybrid
   return {
+    title: "Recovery & Mobility", // <-- Added title
     active: false,
     notes: "Recovery & mobility",
     intensity: "easy",
@@ -139,7 +143,7 @@ export function normalizeLength<T = any>(days: T[], target: number, planType: st
 }
 
 // Ensure each day has the required keys and metrics object shape
-function coerceDayShape(day: any) {
+function coerceDayShape(day: any, idx?: number) {
   const d: any = { ...day };
 
   if (typeof d.active !== "boolean") d.active = true;
@@ -224,7 +228,7 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
   // Coerce/normalize days and ensure exact length
   const planType = String(parsed.metadata.plan_type || plan_type || "Training");
   const rawDays: any[] = Array.isArray(parsed?.days) ? parsed.days : [];
-  const coerced = rawDays.map(coerceDayShape);
+  const coerced = rawDays.map((d, i) => coerceDayShape(d, i)); // <-- Pass index for default title
   const normalized = normalizeLength(coerced, totalDays, planType);
 
   // Final output
