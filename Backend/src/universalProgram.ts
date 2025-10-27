@@ -175,10 +175,26 @@ function coerceDayShape(day: any, idx?: number) {
   return d;
 }
 
+function getWeekdayName(date: Date): string {
+  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][date.getUTCDay()];
+}
+
+function prependWeekdaysToTitles(days: any[], startDateISO: string): any[] {
+  const start = new Date(startDateISO);
+  return days.map((day, idx) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + idx);
+    const weekday = getWeekdayName(d);
+    // Remove any existing weekday prefix to avoid duplication
+    const title = day.title?.replace(/^(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday):\s*/i, "") || "";
+    return { ...day, title: `${weekday}: ${title}` };
+  });
+}
+
 // --------------------------------------------------------------------------
 
-export async function buildProgramDaysUniversal(args: BuildArgs) {
-  const { plan_type, weeks, request_text, hints } = args;
+export async function buildProgramDaysUniversal(args: BuildArgs & { start_date?: string }) {
+  const { plan_type, weeks, request_text, hints, start_date } = args;
   const totalDays = Math.max(1, Math.min(52, Math.floor(weeks || 1))) * 7;
   const daysPerWeek = Math.max(1, Math.min(7, Math.floor(hints?.days_per_week ?? 5)));
 
@@ -191,7 +207,8 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
     modalities: hints?.modalities ?? null,
     goals: hints?.goals ?? null,
     constraints: hints?.constraints ?? null,
-    total_days: totalDays
+    total_days: totalDays,
+    start_date: start_date ?? null // Pass start date for weekday calculation
   };
 
   const completion = await openai.chat.completions.create({
@@ -231,6 +248,12 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
   const coerced = rawDays.map((d, i) => coerceDayShape(d, i)); // <-- Pass index for default title
   const normalized = normalizeLength(coerced, totalDays, planType);
 
+  // After normalizing days:
+  let daysWithWeekdays = normalized;
+  if (start_date) {
+    daysWithWeekdays = prependWeekdaysToTitles(normalized, start_date);
+  }
+
   // Final output
   return {
     metadata: {
@@ -238,6 +261,6 @@ export async function buildProgramDaysUniversal(args: BuildArgs) {
       cadence_days_per_week: parsed.metadata.cadence_days_per_week,
       rationale: typeof parsed.metadata.rationale === "string" ? parsed.metadata.rationale : undefined
     },
-    days: normalized
+    days: daysWithWeekdays
   };
 }
