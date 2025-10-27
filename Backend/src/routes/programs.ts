@@ -608,5 +608,38 @@ router.get("/:id/window", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/programs/:id/week-titles
+ * Returns an array of titles for 7 days starting from the given date (default: today).
+ * To get the next week, set ?start=YYYY-MM-DD to 7 days after the current week start.
+ */
+router.get("/:id/week-titles", async (req, res) => {
+  try {
+    const programId = req.params.id;
+    const startISO = (req.query.start as string) || new Date().toISOString().slice(0, 10);
+
+    const periods = await period.loadPeriods(programId);
+    const titles: string[] = [];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startISO);
+      d.setDate(d.getDate() + i);
+      const plan = period.dayAt(periods, d);
+      if (plan && typeof plan.title === "string") {
+        titles.push(plan.title);
+      } else {
+        titles.push("");
+      }
+    }
+
+    res.json({ week_start: startISO, titles });
+  } catch (e: any) {
+    console.error("GET /api/programs/:id/week-titles error:", e);
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
+
+
 export default router;
 
