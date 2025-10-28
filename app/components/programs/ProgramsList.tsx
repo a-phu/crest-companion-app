@@ -105,16 +105,16 @@ const ProgramsList: React.FC<ProgramsListProps> = ({ programPeriods }) => {
     const moduleType = mapPlanTypeToProgramType(metadata.plan_type);
 
     // Log each day to verify
-    console.log(
-      `📅 Period ${period.program_id} has ${period.period_json.days.length} days`
-    );
+    // console.log(
+    //   `📅 Period ${period.program_id} has ${period.period_json.days.length} days`
+    // );
 
     // ✅ RETURN the mapped array!
     return period.period_json.days.map((day) => {
-      console.log(
-        `   → Day ${day.days_from_today} | ${day.date} | Blocks:`,
-        day.blocks?.length || 0
-      );
+      // console.log(
+      //   `   → Day ${day.days_from_today} | ${day.date} | Blocks:`,
+      //   day.blocks?.length || 0
+      // );
       return {
         ...day,
         moduleType,
@@ -162,11 +162,11 @@ const ProgramsList: React.FC<ProgramsListProps> = ({ programPeriods }) => {
 
   // --- Render ---
   return (
-    <ScrollView>
+    <View>
       {renderSection("Today", ProgramSchedule.Today, todayPrograms)}
       {renderSection("This Week", ProgramSchedule.ThisWeek, thisWeekPrograms)}
       {renderSection("Next Week", ProgramSchedule.NextWeek, nextWeekPrograms)}
-    </ScrollView>
+    </View>
   );
 };
 

@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import CrestAppBar from "../components/CrestAppBar";
 import SectionHeading from "../components/programs/SectionHeading";
@@ -13,9 +19,15 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
   const [programIds, setProgramIds] = useState<string[]>([]);
   // const [loading, setLoading] = useState(true);
   // const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   // const [periods, setPeriods] = useState<ProgramPeriod[]>([]);
-  const { periods, loading, error, fetchProgramPeriods } = useProgramPeriods();
+  const {
+    periods,
+    loading,
+    error,
+    refreshing,
+    setRefreshing,
+    fetchProgramPeriods,
+  } = useProgramPeriods();
 
   // const fetchPrograms = useCallback(async () => {
   //   try {
@@ -95,11 +107,25 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
     fetchProgramPeriods();
   }, []);
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchProgramPeriods();
+  }, [fetchProgramPeriods]);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <CrestAppBar heading={"Programs"} />
-        <ProgramsList programPeriods={periods} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <ProgramsList programPeriods={periods} />
+        </ScrollView>
+
         {/* <View>
           {periods.map((p) => (
             <View key={p.program_period_id}>

@@ -12,7 +12,7 @@ export function useProgramPeriods() {
 
   const fetchProgramPeriods = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!refreshing) setLoading(true);
       setError(null);
 
       const response = await api.get("/messages/programs");
@@ -35,8 +35,9 @@ export function useProgramPeriods() {
       setError("Failed to load program periods. Please try again.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [refreshing]);
 
   return {
     periods,

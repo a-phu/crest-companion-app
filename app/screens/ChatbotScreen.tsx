@@ -187,7 +187,7 @@ const ChatbotScreen = () => {
       }
     };
 
-    loadMessages();
+    // loadMessages();
   }, []);
 
   useEffect(() => {
