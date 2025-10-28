@@ -18,6 +18,7 @@ const sectionColors: Record<ProgramSchedule, string> = {
   [ProgramSchedule.Today]: "#fff",
   [ProgramSchedule.ThisWeek]: "#fff",
   [ProgramSchedule.NextWeek]: "#fff",
+  [ProgramSchedule.Future]: "#fff",
 };
 
 const SectionHeading: React.FC<SectionHeadingProps> = ({ title, schedule }) => {
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginVertical: 16,
   },
   line: {
     flex: 1,

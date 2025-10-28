@@ -295,7 +295,10 @@ export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
   // --- Title Rules ---
   "Each day MUST include a unique, descriptive 'title' summarizing the main focus or activity of that day.",
-  "The 'title' must start with the correct weekday name (e.g., 'Friday: ...', 'Saturday: ...') based on the metadata.start_date",
+  "The 'title' must start with the correct weekday name (e.g., 'Friday: ...', 'Saturday: ...').",
+  "The program's start date is provided as 'start_date' (in YYYY-MM-DD format).",
+  "Determine the weekday for the first day using this start date, then continue the weekday sequence for each subsequent day (e.g., if start_date is a Friday, first day is 'Friday', second is 'Saturday', etc.).",
+  "Do NOT always start with 'Monday' unless the start_date is a Monday.",
   // --- Schedule Rules ---
   "Return exactly ${totalDays} items in 'days'.",
   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
@@ -324,23 +327,26 @@ export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
   // --- Scheduling Fields ---
   `Each day must include scheduling fields:
 
-  • "schedule": one of the strings "today", "this_week", or "next_week".
-    - Compute it relative to metadata.start_date (inclusive):
-      - "today"      → if the day equals metadata.start_date
-      - "this_week"  → if the day falls within the Monday–Sunday week that includes metadata.start_date (but is not "today")
-      - "next_week"  → if the day falls within the Monday–Sunday week immediately after the week of metadata.start_date
+  • "schedule": one of "today", "this_week", "next_week", or "future".
+    - Compute it relative to BOTH the current date (today) and "start_date" (inclusive):
+      - "today"      → only if "start_date" is the same as today's date, and the day equals "start_date".
+      - "this_week"  → if "start_date" falls within the current Monday–Sunday week, but is not today.
+      - "next_week"  → if "start_date" falls within the Monday–Sunday week immediately after the current week.
+      - "future"     → if "start_date" is scheduled for any date AFTER the end of next week.
 
-  • "date": ISO-8601 formatted date (YYYY-MM-DD) calculated from metadata.start_date plus the offset for that day.
-
+  • "date": ISO-8601 formatted date (YYYY-MM-DD) calculated from "start_date" plus the offset for that day.
+• 'days_from_today': integer starting at 0 and increasing by 1 for each subsequent day.",
 Notes:
-  • You must still compute each day's actual calendar date internally from metadata.start_date + offset.
+  • The "schedule" field must reflect timing relative to the current date (today), not just within the plan.
   • Always include both fields: "schedule" and "date".
-  • Weeks are Monday–Sunday boundaries.
+  • Weeks use Monday–Sunday boundaries.
+  • Never assign "today" unless "start_date" exactly matches today's date.
 
-  For example, if metadata.start_date = "2025-10-29" (a Wednesday), then:
-    - 2025-10-29 → schedule: "today", date: "2025-10-29",
-    - 2025-10-30 to 2025-11-02 (Sun of the same ISO week) → schedule: "this_week", date:  "2025-10-30"..."2025-11-02",
-    - 2025-11-03 to 2025-11-09 (Mon–Sun of the next week) → schedule: "next_week", date: "2025-11-03"..."2025-11-09"
+Examples (assuming today's date is 2025-10-29, Wednesday):
+  - "start_date" = "2025-10-29" → schedule: "today",      date: "2025-10-29"
+  - "start_date" = "2025-11-01" (Sat of the same week) → schedule: "this_week",  date: "2025-11-01"
+  - "start_date" = "2025-11-04" (Tue of next week)    → schedule: "next_week",  date: "2025-11-04"
+  - "start_date" = "2025-11-29" (beyond next week)    → schedule: "future",     date: "2025-11-29"
       `,
   "",
   // --- Output Rules ---

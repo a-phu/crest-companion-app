@@ -29,6 +29,7 @@ export enum ProgramSchedule {
   Today = "today",
   ThisWeek = "this_week",
   NextWeek = "next_week",
+  Future = "future",
 }
 
 // export class Program {
@@ -43,7 +44,7 @@ export enum ProgramSchedule {
 export class Program {
   program_id: string;
   user_id: string;
-  type: ProgramType;
+  type: string;
   status: string;
   start_date: string;
   end_date: string;
@@ -57,7 +58,7 @@ export class Program {
     this.program_id = data.program_id;
     this.user_id = data.user_id;
 
-    this.type = normalizeAgentFromIntent(data.type);
+    this.type = data.type;
 
     this.status = data.status;
     this.start_date = data.start_date;

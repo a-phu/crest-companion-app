@@ -2,7 +2,7 @@ import { ProgramSchedule, ProgramType } from "./program";
 import { v4 as uuidv4 } from "uuid";
 
 export class ProgramPeriod {
-  type: ProgramType;
+  type: string;
   program_period_id: string;
   program_id: string;
   period_index: number;
@@ -51,13 +51,15 @@ export class PeriodJson {
   metadata: Metadata;
 
   constructor(days: Day[], metadata: Metadata) {
-    this.days = days;
+    this.days = days.map((day) => {
+      return new Day(day, metadata.plan_type);
+    });
     this.metadata = metadata;
   }
 }
 
 export class Metadata {
-  plan_type: string;
+  plan_type: ProgramType;
   rationale: string;
   cadence_days_per_week: number;
 
@@ -73,20 +75,27 @@ export class Day {
   notes: string;
   title: string;
   active: boolean;
-  blocks: Block[];
+  blocks: string[];
   intensity: string;
   schedule: ProgramSchedule;
   uuid: string;
+  date: string;
+  planType: string;
+  days_from_today: number;
 
-  constructor(data: any) {
+  constructor(data: any, planType: ProgramType) {
     this.tags = data.tags || [];
     this.notes = data.notes;
     this.title = data.title;
     this.active = data.active;
-    this.blocks = (data.blocks || []).map((b: any) => new Block(b));
+    this.blocks = Array.isArray(data.blocks) ? data.blocks : [];
+
     this.intensity = data.intensity;
     this.schedule = data.schedule;
     this.uuid = uuidv4();
+    this.date = data.date;
+    this.planType = planType;
+    this.days_from_today = data.days_from_today;
   }
 }
 

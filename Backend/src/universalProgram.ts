@@ -71,7 +71,14 @@ const JSON_SCHEMA = {
             },
             schedule: { type: "string" },
           },
-          required: ["active", "notes", "blocks", "days_from_today", "date"],
+          required: [
+            "active",
+            "notes",
+            "blocks",
+            "days_from_today",
+            "date",
+            "schedule",
+          ],
         },
       },
     },
@@ -243,11 +250,11 @@ export async function buildProgramDaysUniversal(
   try {
     parsed = JSON.parse(raw);
   } catch {
-    // If the model ever returns non-JSON, fall back to empty shell we can pad
     parsed = {
       metadata: {
         plan_type: plan_type || "Training",
         cadence_days_per_week: daysPerWeek,
+        start_date: start_date ?? new Date().toISOString().split("T")[0],
       },
       days: [],
     };
@@ -263,20 +270,27 @@ export async function buildProgramDaysUniversal(
   if (!parsed.metadata.cadence_days_per_week) {
     parsed.metadata.cadence_days_per_week = daysPerWeek;
   }
+  if (!parsed.metadata.start_date) {
+    parsed.metadata.start_date =
+      start_date ?? new Date().toISOString().split("T")[0];
+  }
 
   // Coerce/normalize days and ensure exact length
   const planType = String(parsed.metadata.plan_type || plan_type || "Training");
   const rawDays: any[] = Array.isArray(parsed?.days) ? parsed.days : [];
-  const coerced = rawDays.map((d, i) => coerceDayShape(d, i)); // <-- Pass index for default title
+  const coerced = rawDays.map((d, i) => coerceDayShape(d, i));
   const normalized = normalizeLength(coerced, totalDays, planType);
 
-  // After normalizing days:
+  // Add weekday labels if a start_date is given
   let daysWithWeekdays = normalized;
-  if (start_date) {
-    daysWithWeekdays = prependWeekdaysToTitles(normalized, start_date);
+  if (parsed.metadata.start_date) {
+    daysWithWeekdays = prependWeekdaysToTitles(
+      normalized,
+      parsed.metadata.start_date
+    );
   }
 
-  // Final output
+  // ✅ Final output includes start_date in metadata
   return {
     metadata: {
       plan_type: planType,
@@ -285,6 +299,7 @@ export async function buildProgramDaysUniversal(
         typeof parsed.metadata.rationale === "string"
           ? parsed.metadata.rationale
           : undefined,
+      start_date: parsed.metadata.start_date,
     },
     days: daysWithWeekdays,
   };

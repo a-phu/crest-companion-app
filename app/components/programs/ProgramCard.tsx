@@ -29,26 +29,39 @@ if (
 }
 
 type ProgramCardProps = {
-  moduleType: ProgramType;
   title: string;
-  content: string; // Markdown string
+  content: string[]; // Markdown string
+  planType: string;
 };
 
-const programImages: Record<ProgramType, any> = {
-  fitness: require("../../../assets/programs/fitness-plan.png"),
-  nutrition: require("../../../assets/programs/nutrition-plan.png"),
-  cognition: require("../../../assets/programs/cognition-plan.png"),
-  clinical: require("../../../assets/programs/clinical-plan.png"),
-  mental: require("../../../assets/programs/mental-plan.png"),
-  identity: require("../../../assets/programs/identity-plan.png"),
-  sleep: require("../../../assets/programs/sleep-plan.png"),
-  training: require("../../../assets/programs/training-plan.png"),
+// const programImages: Record<ProgramType, any> = {
+//   fitness: require("../../../assets/programs/fitness-plan.png"),
+//   nutrition: require("../../../assets/programs/nutrition-plan.png"),
+//   cognition: require("../../../assets/programs/cognition-plan.png"),
+//   clinical: require("../../../assets/programs/clinical-plan.png"),
+//   mind: require("../../../assets/programs/mental-plan.png"),
+//   identity: require("../../../assets/programs/identity-plan.png"),
+//   sleep: require("../../../assets/programs/sleep-plan.png"),
+//   training: require("../../../assets/programs/training-plan.png"),
+//   body: require("../../../assets/programs/training-plan.png"),
+//   other: require("../../../assets/programs/training-plan.png"),
+// };
+export const programImages: Record<ProgramType, any> = {
+  [ProgramType.Fitness]: require("../../../assets/programs/fitness-plan.png"),
+  [ProgramType.Nutrition]: require("../../../assets/programs/nutrition-plan.png"),
+  [ProgramType.Cognition]: require("../../../assets/programs/cognition-plan.png"),
+  [ProgramType.Clinical]: require("../../../assets/programs/clinical-plan.png"),
+  [ProgramType.Mind]: require("../../../assets/programs/mental-plan.png"),
+  [ProgramType.Identity]: require("../../../assets/programs/identity-plan.png"),
+  [ProgramType.Sleep]: require("../../../assets/programs/sleep-plan.png"),
+  [ProgramType.Training]: require("../../../assets/programs/training-plan.png"),
+  [ProgramType.Body]: require("../../../assets/programs/training-plan.png"),
+  [ProgramType.Other]: require("../../../assets/programs/training-plan.png"),
 };
-
 const ProgramCard: React.FC<ProgramCardProps> = ({
-  moduleType,
   title,
   content,
+  planType,
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -71,7 +84,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
   return (
     <View style={styles.card}>
       <ImageBackground
-        source={programImages[moduleType]}
+        source={programImages[normalizeAgentFromIntent(planType)]}
         style={styles.image}
         imageStyle={styles.imageStyle}
       >
@@ -86,12 +99,39 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
 
       {expanded && (
         <View style={styles.content}>
-          <Markdown style={markdownStyles}>{content}</Markdown>
+          <MarkdownList blocks={content} />
           <TouchableOpacity onPress={toggleExpand}>
             <Text style={styles.more}>{expanded ? "━" : ""}</Text>
           </TouchableOpacity>
         </View>
       )}
+    </View>
+  );
+};
+
+interface MarkdownListProps {
+  blocks: string[];
+}
+
+export const MarkdownList: React.FC<MarkdownListProps> = ({ blocks }) => {
+  const sanitizedBlocks = blocks.map(
+    (text) => text.replace(/\|/g, "•") // replace unsupported pipe character
+  );
+
+  return (
+    <View style={{ marginBottom: 16 }}>
+      {sanitizedBlocks.map((block, idx) => (
+        <Markdown
+          key={idx}
+          style={markdownStyles}
+          rules={{
+            // fallback for anything unknown
+            unknown: () => null,
+          }}
+        >
+          {block}
+        </Markdown>
+      ))}
     </View>
   );
 };
@@ -119,6 +159,7 @@ const styles = StyleSheet.create({
   overlayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 12,
     backgroundColor: "rgba(0,0,0,0.3)", // dark overlay for text readability
   },
@@ -127,19 +168,13 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingTop: 12,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 800,
-    color: "#425C56",
-    marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
-  },
   titleOverlay: {
     fontSize: 18,
     fontWeight: 800,
     color: "#fff",
     marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
+    fontFamily: "Quicksand_500Medium",
+    width: "80%",
   },
   more: {
     fontSize: 14,
@@ -186,3 +221,16 @@ const markdownStyles = StyleSheet.create({
 });
 
 export default ProgramCard;
+export function normalizeAgentFromIntent(type: String): ProgramType {
+  const programType = type.toLowerCase().split(".")[0];
+
+  if (programType === "training") return ProgramType.Training;
+  if (programType === "nutrition") return ProgramType.Nutrition;
+  if (programType === "sleep") return ProgramType.Sleep;
+  if (programType === "mind") return ProgramType.Mind;
+  if (programType === "body") return ProgramType.Body;
+  if (programType === "clinical") return ProgramType.Clinical;
+  if (programType === "cognition") return ProgramType.Cognition;
+  if (programType === "identity") return ProgramType.Identity;
+  return ProgramType.Other;
+}
