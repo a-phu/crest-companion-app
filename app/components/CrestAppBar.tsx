@@ -8,15 +8,17 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+import { Raleway_500Medium_Italic } from "@expo-google-fonts/raleway";
 
-type Props = { heading: string };
+type Props = { heading: string; subtitle: string };
 
-export default function CrestAppBar({ heading }: Props) {
+export default function CrestAppBar({ heading, subtitle }: Props) {
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
     Quicksand_400Regular,
     Quicksand_600SemiBold,
     Quicksand_500Medium,
+    Raleway_500Medium_Italic,
   });
 
   if (!fontsLoaded) {
@@ -26,12 +28,8 @@ export default function CrestAppBar({ heading }: Props) {
   return (
     <Appbar style={styles.appBarContainer}>
       {/* <Appbar.Action icon="menu" /> */}
-      <Appbar.Content
-        title={heading}
-        mode="large"
-        style={styles.appBar}
-        titleStyle={styles.title}
-      />
+      <Text style={styles.title}>{heading}</Text>
+      <Text style={styles.subtitle}>{subtitle}</Text>
     </Appbar>
   );
 }
@@ -40,7 +38,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 30,
   },
   contentContainer: {
     flexDirection: "column",
@@ -50,6 +48,15 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 30,
     fontFamily: "Quicksand_500Medium",
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  subtitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontFamily: "Raleway_500Medium_Italic",
+    textAlign: "center",
+    marginBottom: 20,
   },
   appBar: {
     flexDirection: "row",

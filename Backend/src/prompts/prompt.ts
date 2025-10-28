@@ -142,36 +142,51 @@ When the user asks for a program/plan, output a structured plan with:
 Prefer clear lists over paragraphs.
 `;
 
-
 // Intent detector (strict JSON). Decide if we should create a program now.
 export const PROGRAM_INTENT_PROMPT = `
-You are an intent detector for creating programs.
+You are an intent detector for creating personalized programs.
 
 Return ONLY strict JSON:
 {
   "should_create": boolean,
-  "confidence": number,            // 0..1
-  "program_type": "training" | "nutrition" | "sleep" | "mind" | "cognition" | "identity" | "clinical" | "body" | "other",
+  "confidence": number,             // 0..1
+  "program_type": "Cognition" | "Identity" | "Mind" | "Clinical" | "Nutrition" | "Training" | "Body" | "Sleep" | "other",
   "parsed": {
-    "start_date": string|null,     // YYYY-MM-DD if present
-    "duration_weeks": number|null, // integer weeks if present
-    "days_per_week": number|null,  // optional hint
-    "modalities": string[]|null    // optional (e.g. ["BJJ","Muay Thai"])
+    "start_date": string,           // YYYY-MM-DD; defaults to today's date if not specified, or resolve relative phrases
+    "duration_weeks": number | null,
+    "days_per_week": number | null,
+    "modalities": string[] | null
   }
 }
 
 Guidance:
-- should_create=true only if the user is clearly asking for a program/plan/routine/template/schedule
-  or strongly implies “please make one for me now”.
-- If vague or conversational, set should_create=false.
-- Map physical training requests to "training", including:
-  * bodyweight / calisthenics / street workout / gymnastics-style progressions
-  * strength, hypertrophy, conditioning, running, cycling, rowing, swimming
-  * sport-support templates (e.g., BJJ, soccer, basketball) when the user asks for a plan
-- Use "nutrition" for diet/meals/macros plans; "sleep" for sleep routines.
-- Map "meditation", "mindfulness", "relaxation", "breathing exercises" requests to "mind".
-- Otherwise "other".
-- Fill parsed fields when explicitly provided; otherwise set null.
+- \`should_create=true\` only if the user clearly asks for or strongly implies wanting a program, plan, schedule, routine, or template (e.g. “make me a 4-week plan”).
+- If the user is vague, conversational, or reflective (not asking to generate a plan), set \`should_create=false\`.
+
+Program type mapping:
+- **Training:** workout programming, sets/reps, exercise selection, progression, or sport-specific plans (e.g. “strength plan”, “running program”, “BJJ conditioning”).
+- **Nutrition:** diet plans, calorie targets, macros, hydration, supplements, or meal structure.
+- **Clinical:** injuries, illness, pain management, surgery recovery, medications, or medically supervised routines.
+- **Body:** body composition goals, weight changes, soreness (non-clinical), mobility, or recovery protocols.
+- **Sleep:** sleep hygiene, insomnia solutions, bedtime routines, or improving rest/jet lag.
+- **Mind:** mindset, emotions, motivation, resilience, or stress management routines.
+- **Cognition:** focus, memory, concentration, attention, or mental clarity improvement programs.
+- **Identity:** long-term goals, values, self-concept, life direction, or transformation of habits and personal narrative.
+- **other:** anything that does not fit the above domains cleanly.
+
+Parsed field rules:
+- \`start_date\`:
+  - If the user explicitly specifies a date (e.g. “on November 2nd”, “starting January 10”), convert it to ISO format (YYYY-MM-DD).
+  - If the user specifies a **relative time** (e.g. “next Monday”, “in 3 days”, “starting tomorrow”, “in two weeks”), compute the exact ISO date based on today’s date.
+  - If no timing information is given, default to **today’s date** (in ISO format).
+- \`duration_weeks\`, \`days_per_week\`, and \`modalities\`:
+  - Extract only when clearly mentioned or implied (“4-week plan”, “5 days per week”, “running and yoga”).
+  - Otherwise set to null.
+
+Output format requirements:
+- Return ONLY valid JSON — no markdown, prose, or explanations.
+- Always include \`start_date\` as a valid ISO string.
+- Be concise, deterministic, and follow the schema exactly.
 `;
 
 // Importance + agent classifier (strict JSON) used by the pipeline.
@@ -196,8 +211,6 @@ Mark important=true if the message should affect future coaching decisions (e.g.
 Keep reason ≤ 15 words.
 `;
 
-
-
 // Program-day generator (strict JSON; no "kind" fields).
 export const BUILD_PROGRAM_DAYS_PROMPT = `
 You generate periodized programs as STRICT JSON.
@@ -205,18 +218,18 @@ You generate periodized programs as STRICT JSON.
 Return ONLY this shape:
 {
   "days": [
-    { "notes": STRING, "blocks": [ OBJECT, ... ] },
+    { "notes": STRING, "blocks": [ MARKDOWN_STRING, ... ] },
     ...
   ]
 }
 
 Hard rules:
+- Each element in "blocks" is a Markdown-formatted string.
 - Output exactly (weeks * 7) items in "days".
 - NEVER include a "kind" field anywhere.
 - "notes" is concise (≤ 80 chars).
-- "blocks" is an array of PLAIN OBJECTS (no arrays inside unless necessary).
-- Keys are short strings; values are string | number | boolean | small object.
-- English only. No prose outside JSON.
+- Markdown should be clean and human-readable — no JSON inside the Markdown.
+- English only. No prose or explanations outside the JSON.
 
 Context you receive in the user message:
 {
@@ -230,41 +243,108 @@ Context you receive in the user message:
   }
 }
 
-Guidance by agent:
-- Training: compose days with 2–5 lifts or conditioning items per day using objects like:
-  { "name": "Bench Press", "sets": 3, "reps": "6–8", "rest_sec": 120 }
-  or { "name": "Push-ups", "sets": 4, "reps": "8–12", "tempo": "2011" }
-  Balance push/pull/legs across the week. Respect hints.days_per_week. If hints.modalities include grappling/striking, moderate fatigue on those days. Sprinkle core/mobility sometimes.
+Guidance by agent (for Markdown formatting):
 
-- Nutrition: use meal/habit objects, e.g.:
-  { "meal": "High-protein breakfast", "macros": { "kcal": 450, "p": 35, "c": 40, "f": 15 } }
-  or { "habit": "2L water" }
+- **Training:**  
+  Compose each day with 2–5 lifts or conditioning items, using short Markdown sections like:  
+  \`\`\`markdown
+  ### Bench Press  
+  **Sets:** 3 **Reps:** 6–8 **Rest:** 120 s  
 
-- Sleep: use routines/tasks, e.g.:
-  { "sleep_task": "Anchor wake", "time": "06:45" }
-  { "habit": "No screens 60m pre-bed" }
+  ### Push-ups  
+  **Sets:** 4 **Reps:** 8–12 **Tempo:** 2011  
+  \`\`\`
+  - Balance push/pull/legs across the week.  
+  - Respect \`hints.days_per_week\`.  
+  - If \`hints.modalities\` include grappling or striking, moderate fatigue on those days.  
+  - Occasionally include mobility or core work.
 
-- Other agents: output useful habit/task objects aligned to the agent topic and the hints.
+- **Nutrition:**  
+  Use Markdown to describe meals or habits, for example:  
+  \`\`\`markdown
+  ### Meal: High-protein breakfast  
+  **Calories:** 450 kcal **Protein:** 35 g **Carbs:** 40 g **Fat:** 15 g  
+
+  ### Habit  
+  Drink **2 L water** throughout the day.
+  \`\`\`
+
+- **Sleep:**  
+  Use Markdown to describe routines or habits, for example:  
+  \`\`\`markdown
+  ### Sleep Task  
+  Anchor wake time at **06:45**
+
+  ### Habit  
+  No screens **60 min before bed**
+  \`\`\`
+
+- **Other agents:**  
+  Use short Markdown text for practical habits, reflections, or tasks aligned with the agent topic and hints.
 
 Progression:
-- Weeks 1→N should trend from conservative to moderate volume/intensity, not maximal.
+- Weeks 1→N should trend from conservative to moderate volume/intensity, never maximal.
 
 Safety and clarity:
-- Prefer simple fields; avoid jargon.
-- Do NOT add commentary, explanations, or markdown outside the JSON.
+- Keep Markdown simple and consistent.
+- Avoid unnecessary prose or meta-commentary.
+- Do NOT include explanations or any text outside the top-level JSON.
 `;
 
 export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
-  "Absolutely NO prose, NO markdown, only JSON.",
-  "Return exactly ${totalDays} items in 'days'.",
+  // --- Title Rules ---
   "Each day MUST include a unique, descriptive 'title' summarizing the main focus or activity of that day.",
-  "The 'title' must start with the correct weekday name (e.g., 'Friday: ...', 'Saturday: ...').",
-  "The program's start date is provided as 'start_date' (in YYYY-MM-DD format).",
-  "Determine the weekday for the first day using this start date, then continue the weekday sequence for each subsequent day (e.g., if start_date is a Friday, first day is 'Friday', second is 'Saturday', etc.).",
-  "Do NOT always start with 'Monday' unless the start_date is a Monday.",
+  "The 'title' must start with the correct weekday name (e.g., 'Friday: ...', 'Saturday: ...') based on the metadata.start_date",
+  // --- Schedule Rules ---
+  "Return exactly ${totalDays} items in 'days'.",
   "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
   "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
-  "Blocks must have { name, metrics } where metrics is an object (reps, sets, rest_sec, time_min, time_sec, bedtime, waketime, target_hours, calories, liters, etc.).",
-  "Never add a field named 'kind'. Keep the schema minimal and flexible."
+  // --- Detailed Block Guidance ---
+  "When the user asks for a program or plan, ensure 'blocks' are detailed and structured:",
+  "  - Include duration (in weeks) and weekly schedule pattern.",
+  "  - For Training: list exercises with **Sets × Reps**, **Rest**, and **Progression Guidance** (e.g., 'Increase load +5% each week').",
+  "  - For Nutrition: include meals with **macros**, **hydration goals**, or **timing guidance**.",
+  "  - For Sleep: specify **bedtime routines**, **wake anchors**, or **screen limits**.",
+  "  - For Mind/Cognition/Identity: use concise, actionable habits or reflections (no long prose).",
+  "  - If the user mentions limited equipment or constraints (e.g., 'home gym', 'no weights'), include **variations** or **alternatives**.",
+  "  - Add **Safety/Form notes** for exercises or routines when applicable (e.g., 'Maintain neutral spine during deadlift').",
+  "",
+  "Prefer clear lists or short markdown bullet points over paragraphs.",
+  "",
+  // --- Markdown Syntax ---
+  "Each entry in 'blocks' must be a Markdown-formatted string describing one activity, exercise, task, or habit.",
+  "Examples of valid Markdown strings:",
+  "  - Training:  '### Bench Press\\n**Sets:** 3×8  | **Rest:** 120s  | **Progression:** +2.5kg per week\\n*Safety:* Keep shoulders retracted*'",
+  "  - Nutrition: '### Breakfast\\n**Meal:** High-protein oats | **Calories:** 450 | **Macros:** P:35g C:40g F:15g'",
+  "  - Sleep:     '### Evening Routine\\n**Habit:** No screens 60m before bed | **Target:** 22:30 lights out'",
+  "",
+  "Markdown syntax is limited to headings (###), bold (**), bullet lists, and short plain text. Avoid long paragraphs.",
+  "",
+  // --- Scheduling Fields ---
+  `Each day must include scheduling fields:
+
+  • "schedule": one of the strings "today", "this_week", or "next_week".
+    - Compute it relative to metadata.start_date (inclusive):
+      - "today"      → if the day equals metadata.start_date
+      - "this_week"  → if the day falls within the Monday–Sunday week that includes metadata.start_date (but is not "today")
+      - "next_week"  → if the day falls within the Monday–Sunday week immediately after the week of metadata.start_date
+
+  • "date": ISO-8601 formatted date (YYYY-MM-DD) calculated from metadata.start_date plus the offset for that day.
+
+Notes:
+  • You must still compute each day's actual calendar date internally from metadata.start_date + offset.
+  • Always include both fields: "schedule" and "date".
+  • Weeks are Monday–Sunday boundaries.
+
+  For example, if metadata.start_date = "2025-10-29" (a Wednesday), then:
+    - 2025-10-29 → schedule: "today", date: "2025-10-29",
+    - 2025-10-30 to 2025-11-02 (Sun of the same ISO week) → schedule: "this_week", date:  "2025-10-30"..."2025-11-02",
+    - 2025-11-03 to 2025-11-09 (Mon–Sun of the next week) → schedule: "next_week", date: "2025-11-03"..."2025-11-09"
+      `,
+  "",
+  // --- Output Rules ---
+  "Do NOT emit any JSON objects or nested structures inside Markdown.",
+  "Do NOT add a field named 'kind'. Keep all other fields minimal and consistent with the JSON schema.",
+  "Output must be valid JSON and parse successfully. No prose or explanations outside the JSON.",
 ].join("\n");

@@ -70,7 +70,7 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   useEffect(() => {
     console.log(`isVisible ${isVisible}`);
     if (isVisible && fontsLoaded) {
-      fetchInsights();
+      // fetchInsights();
     }
   }, [isVisible, fontsLoaded, fetchInsights]);
 
@@ -87,7 +87,11 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}>
-          <CrestAppBar heading={"Prepare"} />
+          <CrestAppBar
+            heading={"Today’s Insights"}
+            subtitle={"Your System’s State."}
+          />
+
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#fff" />
             <Text style={styles.loadingText}>Generating your insights...</Text>
@@ -101,7 +105,10 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}>
-          <CrestAppBar heading={"Prepare"} />
+          <CrestAppBar
+            heading={"Today’s Insights"}
+            subtitle={"Your System’s State."}
+          />
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>
               {error || "Unable to load insights"}
@@ -115,7 +122,10 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <CrestAppBar heading={"Prepare"} />
+        <CrestAppBar
+          heading={"Today’s Insights"}
+          subtitle={"Your System’s State."}
+        />
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={styles.contentContainer}

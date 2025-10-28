@@ -26,7 +26,7 @@ const RevealModule: React.FC<RevealModuleProps> = ({ reveal }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Let’s reveal what’s really going on…</Text>
+      <Text style={styles.heading}>What We’re Seeing</Text>
       <Text style={styles.text}>
         {reveal || "Loading your personalized insights..."}
       </Text>

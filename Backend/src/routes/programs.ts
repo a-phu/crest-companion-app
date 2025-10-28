@@ -1,7 +1,11 @@
 // backend/src/routes/programs.ts
 import { Router } from "express";
+import { HUMAN_ID, AI_ID } from "../id";
 import { supa } from "../supabase";
-import { buildProgramDaysUniversal, normalizeLength } from "../universalProgram";
+import {
+  buildProgramDaysUniversal,
+  normalizeLength,
+} from "../universalProgram";
 import period from "../program/period";
 
 const router = Router();
@@ -20,7 +24,9 @@ function addDaysUTC(base: Date, n: number) {
   return new Date(base.getTime() + n * MS_PER_DAY);
 }
 function weekdayUTC(d: Date): Weekday {
-  return (["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] as Weekday[])[d.getUTCDay()];
+  return (["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as Weekday[])[
+    d.getUTCDay()
+  ];
 }
 
 /**
@@ -93,16 +99,19 @@ function evenlySpread(arr: number[], n: number): number[] {
     const pick = arr[pos];
     if (!picks.includes(pick)) picks.push(pick);
   }
-  for (const v of arr) { if (picks.length >= n) break; if (!picks.includes(v)) picks.push(v); }
+  for (const v of arr) {
+    if (picks.length >= n) break;
+    if (!picks.includes(v)) picks.push(v);
+  }
   return picks.slice(0, n);
 }
 /* ---------- helper to append a period, supporting exact day counts ---------- */
 async function appendPeriodToCover(
   programId: string,
-  startISO: string,            // first missing date (YYYY-MM-DD)
-  weeksHint: number,           // e.g. 4
-  spec: any,                   // program.spec_json
-  exactDays?: number           // if provided, force exactly this many days
+  startISO: string, // first missing date (YYYY-MM-DD)
+  weeksHint: number, // e.g. 4
+  spec: any, // program.spec_json
+  exactDays?: number // if provided, force exactly this many days
 ) {
   const targetDays = Math.max(1, exactDays ?? weeksHint * 7);
 
@@ -123,7 +132,11 @@ async function appendPeriodToCover(
   if (daysArray.length === 0) throw new Error("Generator returned 0 days.");
 
   // Force exact length, then apply spacing/weekdays
-  const normalized = normalizeLength(daysArray, targetDays, spec?.agent ?? "Training");
+  const normalized = normalizeLength(
+    daysArray,
+    targetDays,
+    spec?.agent ?? "Training"
+  );
   const spacedDays = enforceDaysPerWeek(
     normalized,
     startISO,
@@ -155,7 +168,12 @@ async function appendPeriodToCover(
   });
   if (insErr) throw insErr;
 
-  return { start_date: startISO, end_date: newEndISO, days: spacedDays.length, period_index: nextIndex };
+  return {
+    start_date: startISO,
+    end_date: newEndISO,
+    days: spacedDays.length,
+    period_index: nextIndex,
+  };
 }
 
 /**
@@ -164,7 +182,13 @@ async function appendPeriodToCover(
  */
 router.post("/", async (req, res) => {
   try {
-    const { user_id, type, start_date, period_length_weeks = 4, spec_json = {} } = req.body || {};
+    const {
+      user_id,
+      type,
+      start_date,
+      period_length_weeks = 4,
+      spec_json = {},
+    } = req.body || {};
     if (!user_id || !type) {
       return res.status(400).json({ error: "user_id and type are required" });
     }
@@ -176,11 +200,17 @@ router.post("/", async (req, res) => {
       source: spec_json?.source ?? "api",
       raw_request: spec_json?.raw_request ?? "",
       agent: spec_json?.agent ?? "Training",
-      modalities: Array.isArray(spec_json?.modalities) ? spec_json.modalities : ["General"],
+      modalities: Array.isArray(spec_json?.modalities)
+        ? spec_json.modalities
+        : ["General"],
       days_per_week: Number(spec_json?.days_per_week ?? 5),
       // optional: allow user to pass explicit weekdays
-      training_days: Array.isArray(spec_json?.training_days) ? spec_json.training_days : null,
-      constraints: Array.isArray(spec_json?.constraints) ? spec_json.constraints : [],
+      training_days: Array.isArray(spec_json?.training_days)
+        ? spec_json.training_days
+        : null,
+      constraints: Array.isArray(spec_json?.constraints)
+        ? spec_json.constraints
+        : [],
       goals: Array.isArray(spec_json?.goals) ? spec_json.goals : [],
       spec_version: Number(spec_json?.spec_version ?? 1),
     };
@@ -258,10 +288,27 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/all-programs", async (req, res) => {
+  // const userId = req.params.userid;
+
+  try {
+    const { data, error } = await supa
+      .from("program")
+      .select("*")
+      .eq("user_id", HUMAN_ID)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(data ?? []);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || "unknown error" });
+  }
+});
+
 router.get("/:programId", async (req, res) => {
   const { programId } = req.params;
   const q = await supa
-    .from("program")
+    .from("program_period")
     .select("*")
     .eq("program_id", programId)
     .maybeSingle();
@@ -288,14 +335,18 @@ router.get("/:id/today", async (req, res) => {
     if (!prog) return res.status(404).json({ error: "Program not found" });
 
     if (prog.status === "scheduled" && todayISO >= prog.start_date) {
-      await supa.from("program").update({ status: "active" }).eq("program_id", programId);
+      await supa
+        .from("program")
+        .update({ status: "active" })
+        .eq("program_id", programId);
       prog.status = "active";
     }
 
     const periods = await period.loadPeriods(programId);
     const plan = period.dayAt(periods, new Date(todayISO));
 
-    if (!plan) return res.status(404).json({ error: "No plan found for today" });
+    if (!plan)
+      return res.status(404).json({ error: "No plan found for today" });
     res.json({ program: prog, today: { date: todayISO, plan } });
   } catch (e: any) {
     console.error("GET /api/programs/:id/today error:", e);
@@ -310,14 +361,18 @@ router.get("/:id/today", async (req, res) => {
 router.get("/:id/week", async (req, res) => {
   try {
     const programId = req.params.id;
-    const startISO = (req.query.start as string) || new Date().toISOString().slice(0, 10);
+    const startISO =
+      (req.query.start as string) || new Date().toISOString().slice(0, 10);
 
     const periods = await period.loadPeriods(programId);
     const days: Array<{ date: string; plan: any }> = [];
 
     // find the last stored end date across all periods
     const lastEndISO = periods.length
-      ? (periods as any[]).map((p) => p.end_date).sort().slice(-1)[0]
+      ? (periods as any[])
+          .map((p) => p.end_date)
+          .sort()
+          .slice(-1)[0]
       : null;
 
     let missingFromISO: string | null = null;
@@ -363,8 +418,15 @@ router.get("/:id/week", async (req, res) => {
 router.post("/:id/change", async (req, res) => {
   try {
     const programId = req.params.id;
-    const { effective_date, spec_patch = {}, new_period_weeks = 4 } = req.body || {};
-    if (!effective_date) return res.status(400).json({ error: "effective_date required (YYYY-MM-DD)" });
+    const {
+      effective_date,
+      spec_patch = {},
+      new_period_weeks = 4,
+    } = req.body || {};
+    if (!effective_date)
+      return res
+        .status(400)
+        .json({ error: "effective_date required (YYYY-MM-DD)" });
 
     const { data: prog, error: progErr } = await supa
       .from("program")
@@ -380,18 +442,20 @@ router.post("/:id/change", async (req, res) => {
       ...spec_patch,
       days_per_week: Number.isFinite(Number(spec_patch.days_per_week))
         ? Math.max(1, Math.min(7, Number(spec_patch.days_per_week)))
-        : currentSpec.days_per_week ?? 5,
+        : (currentSpec.days_per_week ?? 5),
       modalities: Array.isArray(spec_patch.modalities)
         ? spec_patch.modalities
-        : currentSpec.modalities ?? ["General"],
+        : (currentSpec.modalities ?? ["General"]),
       // optional explicit weekdays
       training_days: Array.isArray(spec_patch.training_days)
         ? spec_patch.training_days
         : (currentSpec.training_days ?? null),
-      goals: Array.isArray(spec_patch.goals) ? spec_patch.goals : currentSpec.goals ?? [],
+      goals: Array.isArray(spec_patch.goals)
+        ? spec_patch.goals
+        : (currentSpec.goals ?? []),
       constraints: Array.isArray(spec_patch.constraints)
         ? spec_patch.constraints
-        : currentSpec.constraints ?? [],
+        : (currentSpec.constraints ?? []),
       spec_version: Number(currentSpec.spec_version ?? 1) + 1,
     };
 
@@ -415,7 +479,8 @@ router.post("/:id/change", async (req, res) => {
         Math.max(
           0,
           Math.floor(
-            (dayBefore.getTime() - new Date(overlapping.start_date).getTime()) / 86400000
+            (dayBefore.getTime() - new Date(overlapping.start_date).getTime()) /
+              86400000
           )
         ) + 1;
       const trimmed = Array.isArray(overlapping.period_json?.days)
@@ -432,13 +497,18 @@ router.post("/:id/change", async (req, res) => {
     }
 
     // 2) Delete strictly future periods
-    await supa.from("program_period").delete().eq("program_id", programId).gt("start_date", effective_date);
+    await supa
+      .from("program_period")
+      .delete()
+      .eq("program_id", programId)
+      .gt("start_date", effective_date);
 
     // 3) Generate the new segment
     const gen = await buildProgramDaysUniversal({
       plan_type: mergedSpec.agent ?? null,
       weeks: new_period_weeks, // hint; we will size by gen.days
-      request_text: mergedSpec.raw_request || "Apply program changes effective this date.",
+      request_text:
+        mergedSpec.raw_request || "Apply program changes effective this date.",
       hints: {
         days_per_week: mergedSpec.days_per_week ?? 5,
         modalities: mergedSpec.modalities ?? ["General"],
@@ -476,21 +546,27 @@ router.post("/:id/change", async (req, res) => {
     const nextIndex = (existing?.[0]?.period_index ?? -1) + 1;
 
     // Insert new period
-    const { error: insErr } = await supa
-      .from("program_period")
-      .insert({
-        program_id: programId,
-        period_index: nextIndex,
-        start_date: effective_date,
-        end_date: newEndISO,
-        period_json: { ...gen, days: spacedDays }, // {metadata, days} with spacing applied
-      });
+    const { error: insErr } = await supa.from("program_period").insert({
+      program_id: programId,
+      period_index: nextIndex,
+      start_date: effective_date,
+      end_date: newEndISO,
+      period_json: { ...gen, days: spacedDays }, // {metadata, days} with spacing applied
+    });
     if (insErr) throw insErr;
 
     // Persist spec change
-    await supa.from("program").update({ spec_json: mergedSpec }).eq("program_id", programId);
+    await supa
+      .from("program")
+      .update({ spec_json: mergedSpec })
+      .eq("program_id", programId);
 
-    res.json({ ok: true, program_id: programId, effective_date, spec_json: mergedSpec });
+    res.json({
+      ok: true,
+      program_id: programId,
+      effective_date,
+      spec_json: mergedSpec,
+    });
   } catch (e: any) {
     console.error("POST /api/programs/:id/change error:", e);
     res.status(500).json({ error: e.message || "unknown error" });
@@ -506,7 +582,8 @@ router.patch("/:id/periods/:index", async (req, res) => {
     const programId = req.params.id;
     const periodIndex = Number(req.params.index);
     const days = req.body?.days;
-    if (!Array.isArray(days)) return res.status(400).json({ error: "Body must have `days: []`" });
+    if (!Array.isArray(days))
+      return res.status(400).json({ error: "Body must have `days: []`" });
 
     const { data: periodRow, error: perErr } = await supa
       .from("program_period")
@@ -530,7 +607,12 @@ router.patch("/:id/periods/:index", async (req, res) => {
       .eq("program_period_id", periodRow.program_period_id);
     if (updErr) throw updErr;
 
-    res.json({ ok: true, program_id: programId, period_index: periodIndex, days: days.length });
+    res.json({
+      ok: true,
+      program_id: programId,
+      period_index: periodIndex,
+      days: days.length,
+    });
   } catch (e: any) {
     console.error("PATCH /api/programs/:id/periods/:index error:", e);
     res.status(500).json({ error: e.message || "unknown error" });
@@ -550,21 +632,29 @@ router.post("/:id/extend", async (req, res) => {
       ? Math.ceil(requiredDays / 7)
       : Math.max(1, Number(req.body?.weeks_hint || 4));
 
-    if (!fromISO) return res.status(400).json({ error: "from required (YYYY-MM-DD)" });
+    if (!fromISO)
+      return res.status(400).json({ error: "from required (YYYY-MM-DD)" });
 
     const { data: prog, error: progErr } = await supa
-      .from("program").select("*").eq("program_id", programId).maybeSingle();
+      .from("program")
+      .select("*")
+      .eq("program_id", programId)
+      .maybeSingle();
     if (progErr) throw progErr;
     if (!prog) return res.status(404).json({ error: "Program not found" });
 
     // Ensure we only append forward of the last end_date
     const periods = await period.loadPeriods(programId);
     const lastEndISO = periods.length
-      ? periods.map((p: any) => p.end_date).reduce((a: string, b: string) => (a > b ? a : b))
+      ? periods
+          .map((p: any) => p.end_date)
+          .reduce((a: string, b: string) => (a > b ? a : b))
       : null;
 
     if (lastEndISO && fromISO <= lastEndISO) {
-      return res.status(400).json({ error: `from (${fromISO}) must be after last end_date (${lastEndISO})` });
+      return res.status(400).json({
+        error: `from (${fromISO}) must be after last end_date (${lastEndISO})`,
+      });
     }
 
     const appended = await appendPeriodToCover(
@@ -576,7 +666,10 @@ router.post("/:id/extend", async (req, res) => {
     );
 
     // keep parent program end_date in sync
-    await supa.from("program").update({ end_date: appended.end_date }).eq("program_id", programId);
+    await supa
+      .from("program")
+      .update({ end_date: appended.end_date })
+      .eq("program_id", programId);
 
     res.json({ ok: true, appended });
   } catch (e: any) {
@@ -588,7 +681,9 @@ router.post("/:id/extend", async (req, res) => {
 router.get("/:id/window", async (req, res) => {
   try {
     const programId = req.params.id;
-    const startISO = String(req.query.start || new Date().toISOString().slice(0, 10)).slice(0, 10);
+    const startISO = String(
+      req.query.start || new Date().toISOString().slice(0, 10)
+    ).slice(0, 10);
     const daysN = Math.max(1, Math.min(60, Number(req.query.days ?? 7)));
 
     const periods = await period.loadPeriods(programId);
@@ -598,7 +693,10 @@ router.get("/:id/window", async (req, res) => {
     for (let i = 0; i < daysN; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      out.push({ date: d.toISOString().slice(0, 10), plan: period.dayAt(periods, d) });
+      out.push({
+        date: d.toISOString().slice(0, 10),
+        plan: period.dayAt(periods, d),
+      });
     }
 
     res.json({ window_start: startISO, days: daysN, items: out });
@@ -616,7 +714,8 @@ router.get("/:id/window", async (req, res) => {
 router.get("/:id/week-titles", async (req, res) => {
   try {
     const programId = req.params.id;
-    const startISO = (req.query.start as string) || new Date().toISOString().slice(0, 10);
+    const startISO =
+      (req.query.start as string) || new Date().toISOString().slice(0, 10);
 
     const periods = await period.loadPeriods(programId);
     const titles: string[] = [];
@@ -639,7 +738,4 @@ router.get("/:id/week-titles", async (req, res) => {
   }
 });
 
-
-
 export default router;
-

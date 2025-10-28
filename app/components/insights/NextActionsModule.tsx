@@ -16,10 +16,18 @@ interface NextActionsModuleProps {
   }>;
 }
 
-const NextActionsModule: React.FC<NextActionsModuleProps> = ({ actions: actionsData }) => {
+const NextActionsModule: React.FC<NextActionsModuleProps> = ({
+  actions: actionsData,
+}) => {
   const actions = actionsData || [
-    { title: "Loading Action 1...", text: "Please wait while we generate your personalized recommendations." },
-    { title: "Loading Action 2...", text: "Your insights are being prepared based on your conversation history." },
+    {
+      title: "Loading Action 1...",
+      text: "Please wait while we generate your personalized recommendations.",
+    },
+    {
+      title: "Loading Action 2...",
+      text: "Your insights are being prepared based on your conversation history.",
+    },
   ];
   let [fontsLoaded] = useFonts({
     Quicksand_300Light,
@@ -34,7 +42,7 @@ const NextActionsModule: React.FC<NextActionsModuleProps> = ({ actions: actionsD
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>What to do next...</Text>
+      <Text style={styles.heading}>What to Focus on Now</Text>
       {actions.map((item, idx) => (
         <View key={idx} style={styles.option}>
           <Text style={styles.optionTitle}>

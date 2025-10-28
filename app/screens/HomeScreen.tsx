@@ -70,9 +70,10 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.contentContainer}>
           <View>
             {/* <Text style={styles.welcomeText}>Hello!</Text> */}
-            <Text style={styles.subtitleText}>
-              Hello! I am the{"\n"}Crest Companion
+            <Text style={styles.welcomeText}>
+              Every great day starts with awareness.
             </Text>
+            <Text style={styles.subtitleText}>Start clear. Stay steady. </Text>
           </View>
           <Pressable
             style={styles.checkInBtn}
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     // padding: 20,
     marginTop: 225,
+    paddingHorizontal: 30,
     gap: 40,
     // backgroundColor: "#354f5249",
   },
@@ -120,14 +122,15 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     color: "#fff",
-    fontSize: 40,
-    fontFamily: "Raleway_500Medium_Italic",
+    fontSize: 30,
+    fontFamily: "Quicksand_500Medium",
     textAlign: "center",
+    marginBottom: 30,
   },
   subtitleText: {
     color: "#fff",
-    fontSize: 40,
-    fontFamily: "Quicksand_500Medium",
+    fontSize: 20,
+    fontFamily: "Raleway_500Medium_Italic",
     textAlign: "center",
   },
   checkInBtn: {

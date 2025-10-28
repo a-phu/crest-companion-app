@@ -79,10 +79,7 @@ const ChatbotScreen = () => {
   // Stub for assistant reply (replace with API call)
   const fetchAssistantReply = async (message: string): Promise<string> => {
     try {
-      const response = await api.post(
-        "/chat/b9576a32-334b-4444-866e-4ec176d377ff",
-        { text: message }
-      );
+      const response = await api.post("/chat", { text: message });
       return response.data.reply;
     } catch (error) {
       console.error("Error sending message:", error);
@@ -158,7 +155,7 @@ const ChatbotScreen = () => {
       }
     };
 
-    loadMessages();
+    // loadMessages();
   }, []);
 
   useEffect(() => {
@@ -182,7 +179,10 @@ const ChatbotScreen = () => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <CrestAppBar heading={"Performance Assistant"} />
+        <CrestAppBar
+          heading={"Let’s Get to Work"}
+          subtitle={"Let’s keep building together."}
+        />
         <KeyboardAvoidingView
           style={styles.chatContainer}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
