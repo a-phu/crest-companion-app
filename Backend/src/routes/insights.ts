@@ -32,6 +32,7 @@ router.get("/", async (_req, res) => {
 
       // return res.json([]);
       // Return default insights if none exist
+
       return res.json({
         insights: {
           observations: {
@@ -98,7 +99,7 @@ async function generateInsights() {
   try {
     // Get conversation history from last 30 days, only important messages
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 5);
 
     const { data: messages, error } = await supa
       .from("message")

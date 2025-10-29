@@ -176,8 +176,9 @@ Program type mapping:
 
 Parsed field rules:
 - \`start_date\`:
+  - If the user specifies "today" then default to **today’s date** (in ISO format).
   - If the user explicitly specifies a date (e.g. “on November 2nd”, “starting January 10”), convert it to ISO format (YYYY-MM-DD).
-  - If the user specifies a **relative time** (e.g. “next Monday”, “in 3 days”, “starting tomorrow”, “in two weeks”), compute the exact ISO date based on today’s date.
+  - If the user specifies a **relative time** (e.g. “next Monday”, “in 3 days”, “starting tomorrow”, “in two weeks”), compute the exact ISO date based on  **today’s date**.
   - If no timing information is given, default to **today’s date** (in ISO format).
 - \`duration_weeks\`, \`days_per_week\`, and \`modalities\`:
   - Extract only when clearly mentioned or implied (“4-week plan”, “5 days per week”, “running and yoga”).
@@ -199,7 +200,7 @@ Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, Sleep, other
 Guidance for mapping:
 - Training: workout programming, sets/reps, exercise selection, progression, plans.
 - Nutrition: meals, calories, macros, protein, hydration, diet adjustments.
-- Clinical: injuries, pain, illness, surgery, medications, medical cautions.
+- Clinical: injuries, pain, illness, surgery, medications, medical cautions, urgent health events (e.g., seizures).
 - Body: body composition, measurements, weight changes, soreness (non-clinical), recovery protocols.
 - Sleep: sleep duration/quality, routines, insomnia, jet lag.
 - Mind: stress management, emotions, mindset, motivation tactics, meditation, mindfulness, relaxation, breathing exercises.
@@ -208,6 +209,9 @@ Guidance for mapping:
 - other: anything that does not cleanly fit above (e.g., language learning, academic study, software/career/finance questions, entertainment planning, tech troubleshooting). Label these as out of scope so the assistant can redirect the user.
 
 Mark important=true if the message should affect future coaching decisions (e.g., new plan, change of constraints, health issues, strong blockers, deadlines).
+Mark important=true for any request to create a new plan or program, regardless of duration.
+Mark important=true for urgent clinical issues (e.g., seizures, severe pain, medical emergencies), regardless of plan duration.
+Mark important=false for requests for plans less than 7 days (short routines or one-off advice), unless it is an urgent clinical issue or a new plan/program request.
 Keep reason ≤ 15 words.
 `;
 
@@ -292,65 +296,77 @@ Safety and clarity:
 `;
 
 export const UNIVERSAL_PROGRAM_SYSTEM_PROMPT = [
+  // --- Contract ---
   "You generate structured health/fitness/wellbeing programs as STRICT JSON that matches the provided JSON schema.",
+  "NEVER guess dates. ONLY use provided dates and perform calendar arithmetic.",
+  "",
+  // --- Runtime variables (MUST be provided by caller) ---
+  // Pass these from your app:
+  //   CURRENT_DATE: ISO (YYYY-MM-DD) in the user's timezone
+  //   totalDays: integer number of days to output
+  "RUNTIME.CURRENT_DATE = ${CURRENT_DATE}",
+  "RUNTIME.TOTAL_DAYS   = ${totalDays}",
+  "",
   // --- Title Rules ---
-  "Each day MUST include a unique, descriptive 'title' summarizing the main focus or activity of that day.",
-  "The 'title' must start with the correct weekday name (e.g., 'Friday: ...', 'Saturday: ...').",
-  "The program's start date is provided as 'start_date' (in YYYY-MM-DD format).",
-  "Determine the weekday for the first day using this start date, then continue the weekday sequence for each subsequent day (e.g., if start_date is a Friday, first day is 'Friday', second is 'Saturday', etc.).",
-  "Do NOT always start with 'Monday' unless the start_date is a Monday.",
-  // --- Schedule Rules ---
+  "Each day MUST include a unique, descriptive 'title' that starts with the correct weekday name (e.g., 'Friday: ...').",
+  "The program's start date is provided as 'start_date' (YYYY-MM-DD). Determine the weekday for the first day using 'start_date', then continue sequentially.",
+  "Do NOT always start with Monday unless 'start_date' is a Monday.",
+  "",
+  // --- Output cardinality ---
   "Return exactly ${totalDays} items in 'days'.",
-  "Spread `active: true` days across each 7-day window according to cadence_days_per_week.",
-  "Inactive days should still include helpful lighter/recovery/maintenance content for the declared plan_type (e.g., mobility for training; light walk/hydration for nutrition; wind-down for sleep).",
+  "Spread `active: true` across each 7-day window according to 'cadence_days_per_week'. Inactive days must still include helpful lighter/recovery/maintenance content for the 'plan_type'.",
+  "",
   // --- Detailed Block Guidance ---
   "When the user asks for a program or plan, ensure 'blocks' are detailed and structured:",
   "  - Include duration (in weeks) and weekly schedule pattern.",
-  "  - For Training: list exercises with **Sets × Reps**, **Rest**, and **Progression Guidance** (e.g., 'Increase load +5% each week').",
-  "  - For Nutrition: include meals with **macros**, **hydration goals**, or **timing guidance**.",
-  "  - For Sleep: specify **bedtime routines**, **wake anchors**, or **screen limits**.",
-  "  - For Mind/Cognition/Identity: use concise, actionable habits or reflections (no long prose).",
-  "  - If the user mentions limited equipment or constraints (e.g., 'home gym', 'no weights'), include **variations** or **alternatives**.",
-  "  - Add **Safety/Form notes** for exercises or routines when applicable (e.g., 'Maintain neutral spine during deadlift').",
+  "  - Training: **Sets × Reps**, **Rest**, **Progression Guidance** (e.g., '+5%/wk').",
+  "  - Nutrition: meals with **macros**, **hydration**, **timing**.",
+  "  - Sleep: **bedtime routine**, **wake anchors**, **screen limits**.",
+  "  - Mind/Cognition/Identity: concise habits/reflections (no long prose).",
+  "  - Respect constraints (e.g., home gym) and provide variations.",
+  "  - Include **Safety/Form notes** where applicable.",
+  "Prefer clear lists or short markdown bullets over paragraphs.",
   "",
-  "Prefer clear lists or short markdown bullet points over paragraphs.",
-  "",
-  // --- Markdown Syntax ---
-  "Each entry in 'blocks' must be a Markdown-formatted string describing one activity, exercise, task, or habit.",
-  "Examples of valid Markdown strings:",
-  "  - Training:  '### Bench Press\\n**Sets:** 3×8  | **Rest:** 120s  | **Progression:** +2.5kg per week\\n*Safety:* Keep shoulders retracted*'",
+  // --- Markdown Syntax for 'blocks' ---
+  "Each item in 'blocks' is a Markdown string describing ONE activity/exercise/task/habit.",
+  "Allowed Markdown: headings (###), bold (**), bullet lists, short plain text. Avoid long paragraphs.",
+  "Examples:",
+  "  - Training:  '### Bench Press\\n**Sets:** 3×8 | **Rest:** 120s | **Progression:** +2.5kg/wk\\n*Safety:* Retract scapulae*'",
   "  - Nutrition: '### Breakfast\\n**Meal:** High-protein oats | **Calories:** 450 | **Macros:** P:35g C:40g F:15g'",
-  "  - Sleep:     '### Evening Routine\\n**Habit:** No screens 60m before bed | **Target:** 22:30 lights out'",
+  "  - Sleep:     '### Evening Routine\\n**Habit:** No screens 60m pre-bed | **Target:** 22:30 lights out'",
   "",
-  "Markdown syntax is limited to headings (###), bold (**), bullet lists, and short plain text. Avoid long paragraphs.",
+  // --- Date & Schedule Rules (CRITICAL) ---
+  "All dates are derived deterministically:",
+  "  1) Resolve the plan start:",
+  "     - If the user text says 'today', 'tomorrow', etc., REWRITE internally to a concrete ISO date using RUNTIME.CURRENT_DATE (no guessing).",
+  "     - The 'metadata.start_date' field MUST already be a concrete ISO date; use it as the single source of truth.",
+  "  2) For each day i (0-indexed):",
+  "     - 'date' = ISO date computed as start_date + i days.",
+  "     - 'days_from_today' = (date - RUNTIME.CURRENT_DATE) in whole days.",
+  "  3) Sanity constraints:",
+  "     - 'date' MUST be between start_date and (start_date + ${totalDays}-1).",
+  "     - Do NOT alter the year/month/day except by the above arithmetic (handle month/year rollovers normally).",
   "",
   // --- Scheduling Fields ---
   `Each day must include scheduling fields:
 
   • "schedule": one of "today", "this_week", "next_week", or "future".
-    - Compute it relative to BOTH the current date (today) and "start_date" (inclusive):
-      - "today"      → only if "start_date" is the same as today's date, and the day equals "start_date".
-      - "this_week"  → if "start_date" falls within the current Monday–Sunday week, but is not today.
-      - "next_week"  → if "start_date" falls within the Monday–Sunday week immediately after the current week.
-      - "future"     → if "start_date" is scheduled for any date AFTER the end of next week.
+    Compute relative to BOTH RUNTIME.CURRENT_DATE (today) and "start_date" (inclusive):
+      - "today"      → only if "start_date" equals RUNTIME.CURRENT_DATE, and the day's "date" equals "start_date".
+      - "this_week"  → if "start_date" is within the current Monday–Sunday week of RUNTIME.CURRENT_DATE, but not "today".
+      - "next_week"  → if "start_date" is within the Monday–Sunday week immediately after the current week.
+      - "future"     → if "start_date" is after the end of next week.
 
-  • "date": ISO-8601 formatted date (YYYY-MM-DD) calculated from "start_date" plus the offset for that day.
-• 'days_from_today': integer starting at 0 and increasing by 1 for each subsequent day.",
-Notes:
-  • The "schedule" field must reflect timing relative to the current date (today), not just within the plan.
-  • Always include both fields: "schedule" and "date".
-  • Weeks use Monday–Sunday boundaries.
-  • Never assign "today" unless "start_date" exactly matches today's date.
-
-Examples (assuming today's date is 2025-10-29, Wednesday):
-  - "start_date" = "2025-10-29" → schedule: "today",      date: "2025-10-29"
-  - "start_date" = "2025-11-01" (Sat of the same week) → schedule: "this_week",  date: "2025-11-01"
-  - "start_date" = "2025-11-04" (Tue of next week)    → schedule: "next_week",  date: "2025-11-04"
-  - "start_date" = "2025-11-29" (beyond next week)    → schedule: "future",     date: "2025-11-29"
-      `,
+  • "date": ISO-8601 date (YYYY-MM-DD) = start_date + i days.
+  • "days_from_today": integer difference (date − RUNTIME.CURRENT_DATE), where 0 = today.
+  Notes:
+    • The "schedule" field reflects timing relative to RUNTIME.CURRENT_DATE, not just within the plan.
+    • Always include both fields.
+    • Weeks use Monday–Sunday boundaries.
+    • Never assign "today" unless "start_date" === RUNTIME.CURRENT_DATE.
+  `,
   "",
   // --- Output Rules ---
-  "Do NOT emit any JSON objects or nested structures inside Markdown.",
-  "Do NOT add a field named 'kind'. Keep all other fields minimal and consistent with the JSON schema.",
-  "Output must be valid JSON and parse successfully. No prose or explanations outside the JSON.",
+  "Do NOT emit JSON inside Markdown. Do NOT add a field named 'kind'. Keep fields minimal and conform to the schema.",
+  "Output must be valid JSON only—no explanations outside JSON.",
 ].join("\n");

@@ -76,20 +76,10 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
     }
   }, []);
 
-  const generateInsights = useCallback(async () => {
-    try {
-      await api.post("/insights/generate");
-    } catch (err: any) {
-      console.error("Failed to generate insights:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
   useEffect(() => {
     console.log(`is Insights Screen visible: ${isVisible}`);
     if (isVisible && fontsLoaded) {
+      // generateInsights();
       fetchInsights();
       // if (insights == null) {
       //   genserateInsights();

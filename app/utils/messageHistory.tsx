@@ -1,3 +1,5 @@
+import { HUMAN_ID } from "../../defaultIds";
+
 export default class MessageHistory {
   messageId: string;
   senderId: string;
@@ -17,14 +19,11 @@ export default class MessageHistory {
     this.createdAt = new Date(data.created_at);
     this.agentType = data.agent_type;
     // derive role based on sender
-    this.role =
-      this.senderId === "b9576a32-334b-4444-866e-4ec176d377ff"
-        ? "user"
-        : "assistant";
+    this.role = this.senderId === HUMAN_ID ? "user" : "assistant";
   }
 
   isUser(): boolean {
-    return this.senderId === "b9576a32-334b-4444-866e-4ec176d377ff";
+    return this.senderId === HUMAN_ID;
   }
 
   getBubbleColor(): string {

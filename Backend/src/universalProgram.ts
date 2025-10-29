@@ -221,6 +221,9 @@ export async function buildProgramDaysUniversal(
   const system = UNIVERSAL_PROGRAM_SYSTEM_PROMPT.replace(
     "${totalDays}",
     String(totalDays)
+  ).replace(
+    "${CURRENT_DATE}",
+    new Date(Date.now()).toISOString().split("T")[0]
   );
 
   const userPayload = {

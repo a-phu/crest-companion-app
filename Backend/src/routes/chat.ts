@@ -94,26 +94,24 @@ async function classifyWithRetry(
   };
   try {
     const t0 = process.hrtime.bigint();
-    const r = fallback;
+    const r = classifyImportance(text);
     const t1 = process.hrtime.bigint();
     P.mark(`classify_${label}_done`, { ms_inner: Number(t1 - t0) / 1_000_000 });
     return r;
   } catch {
-    // await new Promise((r) => setTimeout(r, 150));
-    // try {
-    //   const t0 = process.hrtime.bigint();
-    //   const r = await classifyImportance(text);
-    //   const t1 = process.hrtime.bigint();
-    //   P.mark(`classify_${label}_done_retry`, {
-    //     ms_inner: Number(t1 - t0) / 1_000_000,
-    //   });
-    //   return r;
-    // } catch {
-    //   P.mark(`classify_${label}_failed`);
-    //   return fallback;
-    // }
-
-    return fallback;
+    await new Promise((r) => setTimeout(r, 150));
+    try {
+      const t0 = process.hrtime.bigint();
+      const r = await classifyImportance(text);
+      const t1 = process.hrtime.bigint();
+      P.mark(`classify_${label}_done_retry`, {
+        ms_inner: Number(t1 - t0) / 1_000_000,
+      });
+      return r;
+    } catch {
+      P.mark(`classify_${label}_failed`);
+      return fallback;
+    }
   }
 }
 
@@ -778,7 +776,7 @@ router.post("/", async (req, res) => {
     const resp = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.3,
-      max_tokens: 800,
+      max_tokens: 1000,
       messages,
     });
     const o1 = process.hrtime.bigint();

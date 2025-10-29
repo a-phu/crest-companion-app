@@ -127,7 +127,7 @@ const ChatbotScreen = () => {
         )
       );
       setLoading(false);
-      await api.post("/insights/generate"); // always generate new insights after each message
+      // await api.post("/insights/generate"); // always generate new insights after each message
     } catch (e) {
       setMessages((prev) =>
         prev.map((m) =>
@@ -160,13 +160,6 @@ const ChatbotScreen = () => {
       throw error;
     }
   };
-  const generateInsights = useCallback(async () => {
-    try {
-      await api.post("/insights/generate");
-    } catch (err: any) {
-      console.error("Failed to generate insights:", err);
-    }
-  }, []);
 
   useEffect(() => {
     const loadMessages = async () => {
