@@ -163,7 +163,11 @@ Return ONLY strict JSON:
 Guidance:
 - should_create=true only if the user is clearly asking for a program/plan/routine/template/schedule
   or strongly implies “please make one for me now”.
+
 - If vague or conversational, set should_create=false.
+
+- If the requested plan duration is less than 7 days, set should_create=false (do not create a program for less than a week).
+
 - Map physical training requests to "training", including:
   * bodyweight / calisthenics / street workout / gymnastics-style progressions
   * strength, hypertrophy, conditioning, running, cycling, rowing, swimming
@@ -184,7 +188,7 @@ Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, Sleep, other
 Guidance for mapping:
 - Training: workout programming, sets/reps, exercise selection, progression, plans.
 - Nutrition: meals, calories, macros, protein, hydration, diet adjustments.
-- Clinical: injuries, pain, illness, surgery, medications, medical cautions.
+- Clinical: injuries, pain, illness, surgery, medications, medical cautions, urgent health events (e.g., seizures).
 - Body: body composition, measurements, weight changes, soreness (non-clinical), recovery protocols.
 - Sleep: sleep duration/quality, routines, insomnia, jet lag.
 - Mind: stress management, emotions, mindset, motivation tactics, meditation, mindfulness, relaxation, breathing exercises.
@@ -193,6 +197,8 @@ Guidance for mapping:
 - other: anything that does not cleanly fit above (e.g., language learning, academic study, software/career/finance questions, entertainment planning, tech troubleshooting). Label these as out of scope so the assistant can redirect the user.
 
 Mark important=true if the message should affect future coaching decisions (e.g., new plan, change of constraints, health issues, strong blockers, deadlines).
+Mark important=true for urgent clinical issues (e.g., seizures, severe pain, medical emergencies), regardless of plan duration.
+Mark important=false for requests for plans less than 7 days (short routines or one-off advice), unless it is an urgent clinical issue.
 Keep reason ≤ 15 words.
 `;
 
