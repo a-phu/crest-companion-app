@@ -197,8 +197,9 @@ Guidance for mapping:
 - other: anything that does not cleanly fit above (e.g., language learning, academic study, software/career/finance questions, entertainment planning, tech troubleshooting). Label these as out of scope so the assistant can redirect the user.
 
 Mark important=true if the message should affect future coaching decisions (e.g., new plan, change of constraints, health issues, strong blockers, deadlines).
+Mark important=true for any request to create a new plan or program, regardless of duration.
 Mark important=true for urgent clinical issues (e.g., seizures, severe pain, medical emergencies), regardless of plan duration.
-Mark important=false for requests for plans less than 7 days (short routines or one-off advice), unless it is an urgent clinical issue.
+Mark important=false for requests for plans less than 7 days (short routines or one-off advice), unless it is an urgent clinical issue or a new plan/program request.
 Keep reason ≤ 15 words.
 `;
 
