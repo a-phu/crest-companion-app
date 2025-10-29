@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "rgba(0,0,0,0.3)", // dark overlay for text readability
+    backgroundColor: "rgba(0, 0, 0, 0.41)", // dark overlay for text readability
   },
   content: {
     paddingHorizontal: 16,

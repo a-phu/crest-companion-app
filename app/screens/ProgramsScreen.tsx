@@ -93,59 +93,60 @@ const ProgramsScreen = () => {
   const fetchPeriods = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
-      // const response = await api.get("/programs/all-programs");
-      // const data = response
-      //   ? response.data.map((item: any) => new Program(item))
-      //   : [];
-      // setPrograms(data);
-      const rawData = {
-        program_id: "535acebb-7898-4d5c-a22b-9608e03b90da",
-        user_id: "328a99fe-fa91-4018-9ce2-0ed956b84bcc",
-        type: "sleep.v1",
-        status: "scheduled",
-        start_date: "2025-10-29",
-        end_date: "2025-11-04",
-        period_length_weeks: 1,
-        spec_json: {
-          agent: "Sleep",
-          goals: [],
-          source: "chat",
-          modalities: ["General"],
-          constraints: [],
-          raw_request:
-            "Make me a plan for improving my sleep to 8 hours for the next week. I am currently sleeping 5-6 hours a night.",
-          spec_version: 1,
-          days_per_week: 5,
-          training_days: null,
-        },
-        current_period_index: 0,
-        created_at: "2025-10-28T11:59:07.141342+00:00",
-        updated_at: "2025-10-28T11:59:07.141342+00:00",
-      };
-      const program = new Program(rawData);
+      const response = await api.get("/programs/all-programs");
+      const data = response
+        ? response.data.map((item: any) => new Program(item))
+        : [];
+      setPrograms(data);
+      // const rawData = {
+      //   program_id: "535acebb-7898-4d5c-a22b-9608e03b90da",
+      //   user_id: "328a99fe-fa91-4018-9ce2-0ed956b84bcc",
+      //   type: "sleep.v1",
+      //   status: "scheduled",
+      //   start_date: "2025-10-29",
+      //   end_date: "2025-11-04",
+      //   period_length_weeks: 1,
+      //   spec_json: {
+      //     agent: "Sleep",
+      //     goals: [],
+      //     source: "chat",
+      //     modalities: ["General"],
+      //     constraints: [],
+      //     raw_request:
+      //       "Make me a plan for improving my sleep to 8 hours for the next week. I am currently sleeping 5-6 hours a night.",
+      //     spec_version: 1,
+      //     days_per_week: 5,
+      //     training_days: null,
+      //   },
+      //   current_period_index: 0,
+      //   created_at: "2025-10-28T11:59:07.141342+00:00",
+      //   updated_at: "2025-10-28T11:59:07.141342+00:00",
+      // };
+      // const program = new Program(rawData);
       // setPrograms([program]);
 
-      // const results = await Promise.all(
-      //   programs.map(async (item) => {
-      //     const response = await api.get(`/programs/${item.program_id}`);
-      //     console.log(
-      //       `response data: ${JSON.stringify(response.data.period_json.days, null, 2)}`
-      //     );
-      //     const payload = Array.isArray(response.data)
-      //       ? response.data[0]
-      //       : response.data;
-      //     // console.log(`response data: ${payload}`);
+      const results = await Promise.all(
+        programs.map(async (item) => {
+          const response = await api.get(`/programs/${item.program_id}`);
+          console.log(
+            `response data: ${JSON.stringify(response.data.period_json.days, null, 2)}`
+          );
+          const payload = Array.isArray(response.data)
+            ? response.data[0]
+            : response.data;
+          // console.log(`response data: ${payload}`);
 
-      //     return new ProgramPeriod(payload, item.type);
-      //   })
-      // );
-
-      const response = await api.get(
-        `/programs/28cc83ff-be3b-47d9-8b3d-83a9c64e4c07`
+          return new ProgramPeriod(payload, item.type);
+        })
       );
-      const period = new ProgramPeriod(response.data, ProgramType.Nutrition);
+      setPeriods(results);
+      // const response = await api.get(
+      //   `/programs/28cc83ff-be3b-47d9-8b3d-83a9c64e4c07`
+      // );
+      // const period = new ProgramPeriod(response.data, ProgramType.Nutrition);
 
-      setPeriods([period]);
+      // setPeriods([period]);
+
       setError(null);
     } catch (err: any) {
       console.error("Failed to fetch programs:", err);
@@ -173,6 +174,46 @@ const ProgramsScreen = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
   };
+
+  const todayPrograms = periods.flatMap((item) =>
+    item.period_json.days
+      .filter(
+        (day) =>
+          // categorizeProgram(day.days_from_today) === ProgramSchedule.Today
+          categorizeProgramByDate(day.date) === ProgramSchedule.Today
+      )
+      .map((day) => ({
+        ...day,
+        type: item.type,
+      }))
+  );
+
+  const thisWeekPrograms = periods.flatMap((item) =>
+    item.period_json.days
+      .filter(
+        (day) =>
+          // categorizeProgram(day.days_from_today) === ProgramSchedule.ThisWeek
+          categorizeProgramByDate(day.date) === ProgramSchedule.ThisWeek
+      )
+      .map((day) => ({
+        ...day,
+        type: item.type,
+      }))
+  );
+
+  const nextWeekPrograms = periods.flatMap((item) =>
+    item.period_json.days
+      .filter(
+        (day) =>
+          // categorizeProgram(day.days_from_today) === ProgramSchedule.NextWeek
+          categorizeProgramByDate(day.date) === ProgramSchedule.NextWeek
+      )
+      .map((day) => ({
+        ...day,
+        type: item.type,
+      }))
+  );
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -185,65 +226,49 @@ const ProgramsScreen = () => {
           }
         >
           <SectionHeading title={"Today"} schedule={ProgramSchedule.Today} />
-          {periods.map((item, idx) =>
-            item.period_json.days
-              .filter(
-                (day) =>
-                  categorizeProgram(day.days_from_today) ==
-                  ProgramSchedule.Today
-              )
-              .map((day, idx) => (
-                <ProgramCard
-                  key={`today-${day.title}`}
-                  title={day.title}
-                  content={day.blocks}
-                  planType={item.type}
-                />
-              ))
+          {todayPrograms.length > 0 ? (
+            todayPrograms.map((day) => (
+              <ProgramCard
+                key={`today-${day.title}`}
+                title={day.title}
+                content={day.blocks}
+                planType={day.type}
+              />
+            ))
+          ) : (
+            <Text style={styles.empty}>No programs scheduled for today.</Text>
           )}
           <SectionHeading
             title={"This Week"}
-            schedule={ProgramSchedule.Today}
+            schedule={ProgramSchedule.ThisWeek}
           />
-          {periods.map((item, idx) =>
-            item.period_json.days
-              .filter(
-                (day) =>
-                  categorizeProgram(day.days_from_today) ==
-                  ProgramSchedule.ThisWeek
-              )
-              .map((day, idx) => (
-                <ProgramCardCollapsed
-                  key={`today-${day.title}`}
-                  title={day.title}
-                />
-                // <Text key={`today-${day.title}`}>
-                //   days from today: {day.days_from_today}, category:{" "}
-                //   {categorizeProgram(day.days_from_today)}
-                // </Text>
-              ))
+          {thisWeekPrograms.length > 0 ? (
+            thisWeekPrograms.map((day) => (
+              <ProgramCardCollapsed
+                key={`thisWeek-${day.title}`}
+                title={day.title}
+              />
+            ))
+          ) : (
+            <Text style={styles.empty}>
+              No programs scheduled for this week.
+            </Text>
           )}
           <SectionHeading
-            title={"This Week"}
-            schedule={ProgramSchedule.Today}
+            title={"Next Week"}
+            schedule={ProgramSchedule.NextWeek}
           />
-          {periods.map((item, idx) =>
-            item.period_json.days
-              .filter(
-                (day) =>
-                  categorizeProgram(day.days_from_today) ==
-                  ProgramSchedule.NextWeek
-              )
-              .map((day, idx) => (
-                <ProgramCardCollapsed
-                  key={`today-${day.title}`}
-                  title={day.title}
-                />
-                // <Text key={`today-${day.title}`}>
-                //   days from today: {day.days_from_today}, category:{" "}
-                //   {categorizeProgram(day.days_from_today)}
-                // </Text>
-              ))
+          {nextWeekPrograms.length > 0 ? (
+            nextWeekPrograms.map((day) => (
+              <ProgramCardCollapsed
+                key={`nextWeek-${day.title}`}
+                title={day.title}
+              />
+            ))
+          ) : (
+            <Text style={styles.empty}>
+              No programs scheduled for next week.
+            </Text>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -263,67 +288,12 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     flex: 1,
   },
-  card: {
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#CBD7D9",
-    margin: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  image: {
-    width: "100%",
-    height: 180,
-    justifyContent: "flex-end",
-  },
-  imageStyle: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  overlayRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    backgroundColor: "rgba(0,0,0,0.3)", // dark overlay for text readability
-  },
-  content: {
-    // paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 12,
-  },
-  title: {
+  empty: {
+    fontWeight: 400,
     fontSize: 16,
-    fontWeight: 800,
-    color: "#425C56",
-    marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
-  },
-  titleOverlay: {
-    fontSize: 18,
-    fontWeight: 800,
+    textAlign: "center",
     color: "#fff",
-    marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
-  },
-  more: {
-    fontSize: 14,
-    color: "#425C56",
-    textAlign: "right",
-    marginTop: 8,
-    marginRight: 12,
-    opacity: 0.9,
-    fontFamily: "Quicksand_600SemiBold",
-  },
-  moreOverlay: {
-    fontSize: 14,
-    color: "#fff",
-    textAlign: "right",
-    marginTop: 8,
-    marginRight: 12,
-    opacity: 0.9,
-    fontFamily: "Quicksand_600SemiBold",
+    fontFamily: "Quicksand_500Medium",
   },
 });
 
@@ -375,6 +345,34 @@ export function categorizeProgram(daysFromToday: number): ProgramSchedule {
   const daysSinceMonday = (currentDayOfWeek + 6) % 7; // makes Monday=0, Sunday=6
 
   const startOfThisWeek = 0 - daysSinceMonday; // days offset from today
+  const endOfThisWeek = 6 - daysSinceMonday;
+  const endOfNextWeek = endOfThisWeek + 7;
+
+  if (daysFromToday >= startOfThisWeek && daysFromToday <= endOfThisWeek) {
+    return ProgramSchedule.ThisWeek;
+  } else if (daysFromToday > endOfThisWeek && daysFromToday <= endOfNextWeek) {
+    return ProgramSchedule.NextWeek;
+  } else {
+    return ProgramSchedule.Future;
+  }
+}
+
+export function categorizeProgramByDate(dateISO: string): ProgramSchedule {
+  const today = new Date();
+  const programDate = new Date(dateISO);
+
+  // Calculate difference in days between program date and today
+  const diffTime = programDate.getTime() - today.setHours(0, 0, 0, 0);
+  const daysFromToday = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (daysFromToday === 0) {
+    return ProgramSchedule.Today;
+  }
+
+  const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
+  const daysSinceMonday = (currentDayOfWeek + 6) % 7; // Monday=0, Sunday=6
+
+  const startOfThisWeek = -daysSinceMonday;
   const endOfThisWeek = 6 - daysSinceMonday;
   const endOfNextWeek = endOfThisWeek + 7;
 

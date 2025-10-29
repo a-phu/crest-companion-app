@@ -12,7 +12,7 @@ export class ProgramPeriod {
   created_at: string;
   updated_at: string;
 
-  constructor(data: any, type: ProgramType) {
+  constructor(data: any, type: string) {
     this.type = type;
     this.program_period_id = data.program_period_id;
     this.program_id = data.program_id;

@@ -1,6 +1,6 @@
 import { Appbar } from "react-native-paper";
 import React from "react";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import {
   useFonts,
   Quicksand_300Light,
@@ -30,6 +30,7 @@ export default function CrestAppBar({ heading, subtitle }: Props) {
       {/* <Appbar.Action icon="menu" /> */}
       <Text style={styles.title}>{heading}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
+      {/* <View style={{ height: 20 }} />{" "} */}
     </Appbar>
   );
 }
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Raleway_500Medium_Italic",
     textAlign: "center",
-    marginBottom: 20,
   },
   appBar: {
     flexDirection: "row",
@@ -67,5 +67,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     alignItems: "center",
     flexDirection: "column",
+    marginBottom: 10,
   },
 });
