@@ -5,6 +5,7 @@ import { openai } from "../OpenaiClient";
 import { HUMAN_ID, AI_ID } from "../../../defaultIds";
 import { classifyImportance, type ImportanceResult } from "../importance";
 import { Profiler } from "../profiler";
+import axios from "axios";
 import {
   BASE_SYSTEM_PROMPT,
   TRAINING_PROGRAM_GUIDE,
@@ -60,6 +61,23 @@ const UUID_RE =
 // -----------------------------
 // Helpers
 // -----------------------------
+
+// Helper function to trigger insights generation
+async function triggerInsightsGeneration() {
+  try {
+    // Make internal API call to generate insights
+    const response = await axios.post(
+      "http://localhost:8080/api/insights/generate"
+    );
+    console.log(
+      "Insights generation triggered successfully:",
+      response.data.message
+    );
+  } catch (error: any) {
+    console.error("Failed to trigger insights generation:", error.message);
+  }
+}
+
 function attachTimingHeaders(
   res: Response,
   profile: Array<{ step: string; ms: number }>
@@ -681,6 +699,15 @@ router.post("/", async (req, res) => {
       agent_type: userImp.agent_type,
       intent,
     });
+
+    // If message is marked as important, trigger insights generation in background
+    if (userImp.important) {
+      console.log('Important message detected, triggering insights generation...');
+      // Trigger insights generation asynchronously (don't wait for it)
+      triggerInsightsGeneration().catch((err: any) => {
+        console.error('Background insights generation failed:', err);
+      });
+    }
 
     // Early, non-blocking user-row update
     void supa
