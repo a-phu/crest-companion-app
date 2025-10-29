@@ -776,7 +776,7 @@ router.post("/", async (req, res) => {
     // 6) Model call for the assistant reply
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       temperature: 0.3,
       max_tokens: 800,
       messages,

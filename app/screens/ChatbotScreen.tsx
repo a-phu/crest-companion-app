@@ -126,6 +126,7 @@ const ChatbotScreen = () => {
             : m
         )
       );
+      setLoading(false);
       await api.post("/insights/generate"); // always generate new insights after each message
     } catch (e) {
       setMessages((prev) =>

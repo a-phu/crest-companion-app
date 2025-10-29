@@ -72,24 +72,6 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
     Quicksand_600SemiBold,
   });
 
-  // const fetchPrograms = useCallback(async () => {
-  //   try {
-  //     if (!refreshing) setLoading(true);
-  //     const response = await api.get("/programs/all-programs");
-  //     const data = response
-  //       ? response.data.map((item: any) => new Program(item))
-  //       : [];
-  //     setPrograms(data);
-  //     setError(null);
-  //   } catch (err: any) {
-  //     console.error("Failed to fetch programs:", err);
-  //     setError("Failed to load programs. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // }, [refreshing]);
-
   const fetchPeriods = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
@@ -98,35 +80,10 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
         ? response.data.map((item: any) => new Program(item))
         : [];
       setPrograms(data);
-      // const rawData = {
-      //   program_id: "535acebb-7898-4d5c-a22b-9608e03b90da",
-      //   user_id: "328a99fe-fa91-4018-9ce2-0ed956b84bcc",
-      //   type: "sleep.v1",
-      //   status: "scheduled",
-      //   start_date: "2025-10-29",
-      //   end_date: "2025-11-04",
-      //   period_length_weeks: 1,
-      //   spec_json: {
-      //     agent: "Sleep",
-      //     goals: [],
-      //     source: "chat",
-      //     modalities: ["General"],
-      //     constraints: [],
-      //     raw_request:
-      //       "Make me a plan for improving my sleep to 8 hours for the next week. I am currently sleeping 5-6 hours a night.",
-      //     spec_version: 1,
-      //     days_per_week: 5,
-      //     training_days: null,
-      //   },
-      //   current_period_index: 0,
-      //   created_at: "2025-10-28T11:59:07.141342+00:00",
-      //   updated_at: "2025-10-28T11:59:07.141342+00:00",
-      // };
-      // const program = new Program(rawData);
-      // setPrograms([program]);
 
+      console.log(`programs: ${programs[0]}`);
       const results = await Promise.all(
-        programs.map(async (item) => {
+        data.map(async (item) => {
           const response = await api.get(`/programs/${item.program_id}`);
           console.log(
             `response data: ${JSON.stringify(response.data.period_json.days, null, 2)}`
@@ -170,13 +127,6 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
     fetchPeriods();
   }, [fetchPeriods]);
 
-  const [expanded, setExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(!expanded);
-  };
-
   const todayPrograms = periods.flatMap((item) =>
     item.period_json.days
       .filter(
@@ -190,31 +140,52 @@ const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
       }))
   );
 
-  const thisWeekPrograms = periods.flatMap((item) =>
-    item.period_json.days
-      .filter(
-        (day) =>
-          // categorizeProgram(day.days_from_today) === ProgramSchedule.ThisWeek
-          categorizeProgramByDate(day.date) === ProgramSchedule.ThisWeek
-      )
-      .map((day) => ({
-        ...day,
-        type: item.type,
-      }))
-  );
+  const thisWeekPrograms = periods
+    .flatMap((item) =>
+      item.period_json.days
+        .filter(
+          (day) =>
+            // categorizeProgram(day.days_from_today) === ProgramSchedule.ThisWeek
+            categorizeProgramByDate(day.date) === ProgramSchedule.ThisWeek
+        )
+        .map((day) => ({
+          ...day,
+          type: item.type,
+        }))
+    )
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const nextWeekPrograms = periods.flatMap((item) =>
-    item.period_json.days
-      .filter(
-        (day) =>
-          // categorizeProgram(day.days_from_today) === ProgramSchedule.NextWeek
-          categorizeProgramByDate(day.date) === ProgramSchedule.NextWeek
-      )
-      .map((day) => ({
-        ...day,
-        type: item.type,
-      }))
-  );
+  const nextWeekPrograms = periods
+    .flatMap((item) =>
+      item.period_json.days
+        .filter(
+          (day) =>
+            categorizeProgramByDate(day.date) === ProgramSchedule.NextWeek
+        )
+        .map((day) => ({
+          ...day,
+          type: item.type,
+        }))
+    )
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <CrestAppBar
+            heading={"Today’s Insights"}
+            subtitle={"Your System’s State."}
+          />
+
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text style={styles.loadingText}>Generating your plans...</Text>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -304,6 +275,18 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#fff",
+    fontFamily: "Quicksand_500Medium",
   },
 });
 

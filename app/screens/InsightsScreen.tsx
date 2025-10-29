@@ -92,7 +92,7 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
     if (isVisible && fontsLoaded) {
       fetchInsights();
       // if (insights == null) {
-      //   generateInsights();
+      //   genserateInsights();
       // }
     }
   }, [isVisible, fontsLoaded, fetchInsights]);
