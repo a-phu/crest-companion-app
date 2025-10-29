@@ -28,7 +28,8 @@ const RevealModule: React.FC<RevealModuleProps> = ({ reveal }) => {
     <View style={styles.container}>
       <Text style={styles.heading}>What We’re Seeing</Text>
       <Text style={styles.text}>
-        {reveal || "Loading your personalized insights..."}
+        {reveal ||
+          "Welcome to your comprehensive wellness insights! I analyze 8 key areas of your wellbeing: Cognition, Identity, Mind, Clinical, Nutrition, Training, Body, and Sleep. As you share more about your experiences across these dimensions, I'll provide increasingly personalized observations and actionable recommendations tailored to your unique wellness journey."}
       </Text>
     </View>
   );

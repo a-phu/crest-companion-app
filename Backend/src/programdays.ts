@@ -25,27 +25,37 @@ export type BuildProgramOptions = {
     days_per_week?: number | null;
     modalities?: string[] | null; // e.g. ["BJJ", "Muay Thai"]
     constraints?: string[] | null; // e.g. ["minimal equipment", "home gym"]
-    goals?: string[] | null;       // e.g. ["strength", "hypertrophy"]
+    goals?: string[] | null; // e.g. ["strength", "hypertrophy"]
   };
 };
 
 /** Keep arrays sized correctly, trim strings, keep blocks as objects, and strip any accidental `kind` field. */
-export function sanitizeDaysNoKinds(
-  { daysIn, weeks }: { daysIn: ProgramDay[] | undefined; weeks: number }
-): ProgramDay[] {
+export function sanitizeDaysNoKinds({
+  daysIn,
+  weeks,
+}: {
+  daysIn: ProgramDay[] | undefined;
+  weeks: number;
+}): ProgramDay[] {
   const target = Math.max(1, weeks) * 7;
-  const arr: ProgramDay[] = Array.isArray(daysIn) ? daysIn.slice(0, target) : [];
+  const arr: ProgramDay[] = Array.isArray(daysIn)
+    ? daysIn.slice(0, target)
+    : [];
 
   while (arr.length < target) {
     arr.push({ notes: `Day ${arr.length + 1}`, blocks: [] });
   }
 
   return arr.map((d, i): ProgramDay => {
-    const notes = typeof d?.notes === "string" ? d.notes.slice(0, 120) : `Day ${i + 1}`;
+    const notes =
+      typeof d?.notes === "string" ? d.notes.slice(0, 120) : `Day ${i + 1}`;
 
     const blocksIn: unknown[] = Array.isArray(d?.blocks) ? d.blocks : [];
     const blocks: ProgramBlock[] = blocksIn
-      .filter((b: unknown): b is ProgramBlock => !!b && typeof b === "object" && !Array.isArray(b))
+      .filter(
+        (b: unknown): b is ProgramBlock =>
+          !!b && typeof b === "object" && !Array.isArray(b)
+      )
       .map((b: ProgramBlock) => {
         const out: ProgramBlock = {};
         for (const [k, v] of Object.entries(b as object)) {
@@ -87,8 +97,8 @@ export async function buildProgramDaysNoKinds(
         // keep the "contract" simple & explicit for the model
         content: JSON.stringify(
           {
-            agent,          // e.g. "Training" | "Nutrition" | "Sleep" | ...
-            weeks,          // number of weeks
+            agent, // e.g. "Training" | "Nutrition" | "Sleep" | ...
+            weeks, // number of weeks
             hints: hints ?? null,
           },
           null,
@@ -98,12 +108,16 @@ export async function buildProgramDaysNoKinds(
     ],
   });
   const t1 = process.hrtime.bigint();
-  P?.mark?.("build_program_days_model_done", { ms_inner: Number(t1 - t0) / 1_000_000 });
+  P?.mark?.("build_program_days_model_done", {
+    ms_inner: Number(t1 - t0) / 1_000_000,
+  });
 
   // 2) Parse model output safely
   let rawDays: ProgramDay[] = [];
   try {
-    const parsed = JSON.parse(completion.choices?.[0]?.message?.content ?? "{}");
+    const parsed = JSON.parse(
+      completion.choices?.[0]?.message?.content ?? "{}"
+    );
     if (parsed && Array.isArray(parsed.days)) {
       rawDays = parsed.days as ProgramDay[];
     }
@@ -116,4 +130,3 @@ export async function buildProgramDaysNoKinds(
   // If the model returned fewer/more, `sanitizeDaysNoKinds` has already padded/truncated.
   return cleaned;
 }
-

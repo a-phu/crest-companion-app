@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -22,11 +22,14 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
-
+import {
+  Raleway_600SemiBold,
+  Raleway_500Medium_Italic,
+  Raleway_500Medium,
+} from "@expo-google-fonts/raleway";
 import api from "../scripts/axiosClient";
+import { HUMAN_ID, AI_ID } from "../../defaultIds";
 // UUIDs for identifying user vs. assistant
-const USER_ID = "b9576a32-334b-4444-866e-4ec176d377ff";
-const ASSISTANT_ID = "61a72b2b-9fac-4cba-bd02-aa6252765b39";
 
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -55,9 +58,9 @@ const ChatbotScreen = () => {
       // Map backend JSON → frontend Message[]
       const messages: Message[] = response.data.map((item: any) => {
         const role =
-          item.sender_id === USER_ID
+          item.sender_id === HUMAN_ID
             ? "user"
-            : item.sender_id === ASSISTANT_ID
+            : item.sender_id === AI_ID
               ? "assistant"
               : "system";
 
@@ -66,23 +69,13 @@ const ChatbotScreen = () => {
           role,
           content: item.content,
           createdAt: new Date(item.created_at).getTime(),
+          isImportant: item.is_important,
         };
       });
 
       return messages;
     } catch (error) {
       console.error("Error fetching thread messages:", error);
-      throw error;
-    }
-  };
-
-  // Stub for assistant reply (replace with API call)
-  const fetchAssistantReply = async (message: string): Promise<string> => {
-    try {
-      const response = await api.post("/chat", { text: message });
-      return response.data.reply;
-    } catch (error) {
-      console.error("Error sending message:", error);
       throw error;
     }
   };
@@ -96,6 +89,7 @@ const ChatbotScreen = () => {
       role: "user",
       content: trimmed,
       createdAt: Date.now(),
+      isImportant: false,
     };
 
     // Show user message immediately
@@ -111,6 +105,7 @@ const ChatbotScreen = () => {
         role: "assistant",
         content: "", // or "Assistant is typing"
         createdAt: Date.now(),
+        isImportant: false,
       },
     ]);
 
@@ -122,10 +117,16 @@ const ChatbotScreen = () => {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === typingId
-            ? { ...m, content: reply, createdAt: Date.now() }
+            ? {
+                ...m,
+                content: reply,
+                createdAt: Date.now(),
+                isImportant: false,
+              }
             : m
         )
       );
+      await api.post("/insights/generate"); // always generate new insights after each message
     } catch (e) {
       setMessages((prev) =>
         prev.map((m) =>
@@ -143,6 +144,29 @@ const ChatbotScreen = () => {
     }
   };
 
+  // Stub for assistant reply (replace with API call)
+  const fetchAssistantReply = async (message: string): Promise<string> => {
+    try {
+      const response = await api.post("/chat", { text: message });
+      const isImportant = JSON.stringify(response.data.meta);
+      console.log(`is important: ${isImportant}`);
+      const important = response.data.meta.userImportance.important;
+      console.log(`is important value: ${important}`);
+      // if (important == true) api.post("/insights/generate");
+      return response.data.reply;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
+  };
+  const generateInsights = useCallback(async () => {
+    try {
+      await api.post("/insights/generate");
+    } catch (err: any) {
+      console.error("Failed to generate insights:", err);
+    }
+  }, []);
+
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -155,7 +179,7 @@ const ChatbotScreen = () => {
       }
     };
 
-    // loadMessages();
+    loadMessages();
   }, []);
 
   useEffect(() => {
@@ -170,6 +194,9 @@ const ChatbotScreen = () => {
     Quicksand_400Regular,
     Quicksand_600SemiBold,
     Quicksand_500Medium,
+    Raleway_600SemiBold,
+    Raleway_500Medium_Italic,
+    Raleway_500Medium,
   });
 
   if (!fontsLoaded) {
@@ -204,6 +231,7 @@ const ChatbotScreen = () => {
               <ActivityIndicator size="small" color="#fff" />
             </View>
           )}
+          <Text style={styles.viewNextScreenText}>View Today’s Insights →</Text>
           <ChatInput onSend={handleSend} onFocusScroll={scrollToBottom} />
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -252,5 +280,12 @@ const styles = StyleSheet.create({
   crestSmallLogo: {
     height: 30,
     width: 100,
+  },
+  viewNextScreenText: {
+    fontFamily: "Raleway_500Medium_Italic",
+    color: "white",
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 16,
   },
 });

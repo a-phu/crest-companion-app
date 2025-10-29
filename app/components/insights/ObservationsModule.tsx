@@ -37,14 +37,38 @@ const ObservationsModule: React.FC<ObservationsModuleProps> = ({
         { title: "Sleep", text: observationsData.sleep },
       ]
     : [
-        { title: "Cognition", text: "Loading cognition insights..." },
-        { title: "Identity", text: "Loading identity insights..." },
-        { title: "Mind", text: "Loading mind insights..." },
-        { title: "Clinical", text: "Loading clinical insights..." },
-        { title: "Nutrition", text: "Loading nutrition insights..." },
-        { title: "Training", text: "Loading training insights..." },
-        { title: "Body", text: "Loading body insights..." },
-        { title: "Sleep", text: "Loading sleep insights..." },
+        {
+          title: "Cognition",
+          text: "Share your focus, memory, and mental clarity to optimize cognitive performance.",
+        },
+        {
+          title: "Identity",
+          text: "Tell me about your personal goals and values to understand your identity and purpose.",
+        },
+        {
+          title: "Mind",
+          text: "Describe your exercise routines and physical activity to optimize your training.",
+        },
+        {
+          title: "Clinical",
+          text: "Share any health concerns, symptoms, or medical observations for clinical insights.",
+        },
+        {
+          title: "Nutrition",
+          text: "Tell me about your meals and eating habits to get personalized nutrition insights.",
+        },
+        {
+          title: "Training",
+          text: "Describe your exercise routines and physical activity to optimize your training.",
+        },
+        {
+          title: "Body",
+          text: "Share how your body feels, energy levels, and physical sensations throughout the day.",
+        },
+        {
+          title: "Sleep",
+          text: "Start tracking your sleep patterns by sharing how you feel each morning.",
+        },
       ];
 
   const observationIcons: Record<string, keyof typeof MaterialIcons.glyphMap> =

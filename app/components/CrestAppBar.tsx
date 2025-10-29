@@ -29,22 +29,17 @@ export default function CrestAppBar({ heading, subtitle }: Props) {
     <Appbar style={styles.appBarContainer}>
       {/* <Appbar.Action icon="menu" /> */}
       <Text style={styles.title}>{heading}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-      {/* <View style={{ height: 20 }} />{" "} */}
+
+      {subtitle.length === 0 ? (
+        <Text style={styles.subtitle}>{}</Text>
+      ) : (
+        <Text style={styles.subtitle}>{subtitle}</Text>
+      )}
     </Appbar>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  contentContainer: {
-    flexDirection: "column",
-    flex: 1,
-  },
   title: {
     color: "#fff",
     fontSize: 30,
@@ -67,6 +62,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     alignItems: "center",
     flexDirection: "column",
-    marginBottom: 10,
+    marginBottom: 20,
   },
 });

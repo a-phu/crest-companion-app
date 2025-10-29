@@ -1,6 +1,6 @@
 // backend/src/routes/programs.ts
 import { Router } from "express";
-import { HUMAN_ID, AI_ID } from "../id";
+import { HUMAN_ID, AI_ID } from "../../../defaultIds";
 import { supa } from "../supabase";
 import {
   buildProgramDaysUniversal,

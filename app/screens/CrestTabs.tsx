@@ -15,12 +15,13 @@ import { LinearGradient } from "expo-linear-gradient";
 type ScreenEntry = {
   key: string;
   component: React.ComponentType<any>;
+  index: number;
 };
 
 const screens: ScreenEntry[] = [
-  { key: "chatbot", component: ChatbotScreen }, // index 0
-  { key: "insights", component: InsightsScreen }, // index 1
-  { key: "actions", component: ProgramsScreen }, // index 2
+  { key: "chatbot", component: ChatbotScreen, index: 0 }, // index 0
+  { key: "insights", component: InsightsScreen, index: 1 }, // index 1
+  { key: "actions", component: ProgramsScreen, index: 2 }, // index 2
 ];
 
 const pages = ["Page 1", "Page 2", "Page 3"];
@@ -31,6 +32,13 @@ export default function CrestTabs() {
   const animatedCurrent = useRef(Animated.divide(scrollX, width)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  function isScreenVisible(key: string, index: number): Boolean {
+    return (
+      (key === "chatbot" && index === 0) ||
+      (key === "insights" && index === 1) ||
+      (key === "actions" && index === 2)
+    );
+  }
   return (
     <ImageBackground
       source={require("../../assets/backgrounds/mountain-abstract.png")}
@@ -56,7 +64,7 @@ export default function CrestTabs() {
       >
         {screens.map(({ key, component: Screen }, index) => (
           <View key={key} style={[styles.page, { width, height }]}>
-            <Screen isVisible={currentIndex === 1} />
+            <Screen isVisible={isScreenVisible(key, currentIndex)} />
           </View>
         ))}
       </Animated.ScrollView>

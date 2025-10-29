@@ -20,6 +20,7 @@ import {
   Quicksand_500Medium,
   Quicksand_600SemiBold,
 } from "@expo-google-fonts/quicksand";
+import Insight from "../utils/insight";
 
 type InsightsData = {
   observations: {
@@ -40,7 +41,7 @@ type InsightsData = {
 };
 
 const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
-  const [insights, setInsights] = useState<InsightsData | null>(null);
+  const [insights, setInsights] = useState<Insight | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,8 +56,16 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
   const fetchInsights = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
+
       const response = await api.get("/insights");
-      setInsights(response.data);
+
+      // ✅ Map API payload into your Insight class
+      const mappedInsights = new Insight(response.data.insights);
+      if (response.data.source === "default") {
+        console.log("no insights found");
+      }
+
+      setInsights(mappedInsights);
       setError(null);
     } catch (err: any) {
       console.error("Failed to fetch insights:", err);
@@ -65,12 +74,26 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [refreshing]);
+  }, []);
+
+  const generateInsights = useCallback(async () => {
+    try {
+      await api.post("/insights/generate");
+    } catch (err: any) {
+      console.error("Failed to generate insights:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    console.log(`isVisible ${isVisible}`);
+    console.log(`is Insights Screen visible: ${isVisible}`);
     if (isVisible && fontsLoaded) {
-      // fetchInsights();
+      fetchInsights();
+      // if (insights == null) {
+      //   generateInsights();
+      // }
     }
   }, [isVisible, fontsLoaded, fetchInsights]);
 
@@ -133,9 +156,20 @@ const InsightsScreen = ({ isVisible }: { isVisible: boolean }) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <ObservationsModule observations={insights.observations} />
-          <RevealModule reveal={insights.reveal} />
-          <NextActionsModule actions={insights.nextActions} />
+          {insights ? (
+            <View>
+              <ObservationsModule observations={insights.observations} />
+              <RevealModule reveal={insights.reveal} />
+              <NextActionsModule actions={insights.nextActions} />
+            </View>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {error || "Unable to load insights"}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.viewNextScreenText}>View Your Plans →</Text>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -178,5 +212,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontFamily: "Quicksand_500Medium",
+  },
+  viewNextScreenText: {
+    fontFamily: "Raleway_500Medium_Italic",
+    color: "white",
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 16,
   },
 });

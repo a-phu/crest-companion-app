@@ -21,12 +21,12 @@ const NextActionsModule: React.FC<NextActionsModuleProps> = ({
 }) => {
   const actions = actionsData || [
     {
-      title: "Loading Action 1...",
-      text: "Please wait while we generate your personalized recommendations.",
+      title: "Start Your Holistic Assessment",
+      text: "Begin by sharing your current sleep schedule, energy levels, and how you feel throughout the day.",
     },
     {
-      title: "Loading Action 2...",
-      text: "Your insights are being prepared based on your conversation history.",
+      title: "Define Your Goals",
+      text: "Tell me about your health goals, values, and what areas of wellness you'd like to focus on improving.",
     },
   ];
   let [fontsLoaded] = useFonts({

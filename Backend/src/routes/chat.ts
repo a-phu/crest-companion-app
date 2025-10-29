@@ -2,7 +2,7 @@
 import { Router, type Response } from "express";
 import { supa } from "../supabase";
 import { openai } from "../OpenaiClient";
-import { AI_ID, HUMAN_ID } from "../id";
+import { HUMAN_ID, AI_ID } from "../../../defaultIds";
 import { classifyImportance, type ImportanceResult } from "../importance";
 import { Profiler } from "../profiler";
 import {
@@ -94,24 +94,26 @@ async function classifyWithRetry(
   };
   try {
     const t0 = process.hrtime.bigint();
-    const r = await classifyImportance(text);
+    const r = fallback;
     const t1 = process.hrtime.bigint();
     P.mark(`classify_${label}_done`, { ms_inner: Number(t1 - t0) / 1_000_000 });
     return r;
   } catch {
-    await new Promise((r) => setTimeout(r, 150));
-    try {
-      const t0 = process.hrtime.bigint();
-      const r = await classifyImportance(text);
-      const t1 = process.hrtime.bigint();
-      P.mark(`classify_${label}_done_retry`, {
-        ms_inner: Number(t1 - t0) / 1_000_000,
-      });
-      return r;
-    } catch {
-      P.mark(`classify_${label}_failed`);
-      return fallback;
-    }
+    // await new Promise((r) => setTimeout(r, 150));
+    // try {
+    //   const t0 = process.hrtime.bigint();
+    //   const r = await classifyImportance(text);
+    //   const t1 = process.hrtime.bigint();
+    //   P.mark(`classify_${label}_done_retry`, {
+    //     ms_inner: Number(t1 - t0) / 1_000_000,
+    //   });
+    //   return r;
+    // } catch {
+    //   P.mark(`classify_${label}_failed`);
+    //   return fallback;
+    // }
+
+    return fallback;
   }
 }
 
@@ -774,9 +776,9 @@ router.post("/", async (req, res) => {
     // 6) Model call for the assistant reply
     const o0 = process.hrtime.bigint();
     const resp = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-3.5-turbo",
       temperature: 0.3,
-      max_tokens: 1000,
+      max_tokens: 800,
       messages,
     });
     const o1 = process.hrtime.bigint();

@@ -58,7 +58,7 @@ export const programImages: Record<ProgramType, any> = {
   [ProgramType.Other]: require("../../assets/programs/training-plan.png"),
 };
 
-const ProgramsScreen = () => {
+const ProgramsScreen = ({ isVisible }: { isVisible: boolean }) => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [periods, setPeriods] = useState<ProgramPeriod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,23 +72,23 @@ const ProgramsScreen = () => {
     Quicksand_600SemiBold,
   });
 
-  const fetchPrograms = useCallback(async () => {
-    try {
-      if (!refreshing) setLoading(true);
-      const response = await api.get("/programs/all-programs");
-      const data = response
-        ? response.data.map((item: any) => new Program(item))
-        : [];
-      setPrograms(data);
-      setError(null);
-    } catch (err: any) {
-      console.error("Failed to fetch programs:", err);
-      setError("Failed to load programs. Please try again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [refreshing]);
+  // const fetchPrograms = useCallback(async () => {
+  //   try {
+  //     if (!refreshing) setLoading(true);
+  //     const response = await api.get("/programs/all-programs");
+  //     const data = response
+  //       ? response.data.map((item: any) => new Program(item))
+  //       : [];
+  //     setPrograms(data);
+  //     setError(null);
+  //   } catch (err: any) {
+  //     console.error("Failed to fetch programs:", err);
+  //     setError("Failed to load programs. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // }, [refreshing]);
 
   const fetchPeriods = useCallback(async () => {
     try {
@@ -158,15 +158,17 @@ const ProgramsScreen = () => {
   }, [refreshing]);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    console.log(`is Programs Screen visible: ${isVisible}`);
+
+    if (isVisible && fontsLoaded) {
       fetchPeriods();
     }
-  }, [fontsLoaded, fetchPrograms]);
+  }, [isVisible, fontsLoaded, fetchPeriods]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchPeriods();
-  }, [fetchPrograms]);
+  }, [fetchPeriods]);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -225,51 +227,56 @@ const ProgramsScreen = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <SectionHeading title={"Today"} schedule={ProgramSchedule.Today} />
-          {todayPrograms.length > 0 ? (
-            todayPrograms.map((day) => (
-              <ProgramCard
-                key={`today-${day.title}`}
-                title={day.title}
-                content={day.blocks}
-                planType={day.type}
-              />
-            ))
-          ) : (
-            <Text style={styles.empty}>No programs scheduled for today.</Text>
-          )}
-          <SectionHeading
-            title={"This Week"}
-            schedule={ProgramSchedule.ThisWeek}
-          />
-          {thisWeekPrograms.length > 0 ? (
-            thisWeekPrograms.map((day) => (
-              <ProgramCardCollapsed
-                key={`thisWeek-${day.title}`}
-                title={day.title}
-              />
-            ))
-          ) : (
-            <Text style={styles.empty}>
-              No programs scheduled for this week.
-            </Text>
-          )}
-          <SectionHeading
-            title={"Next Week"}
-            schedule={ProgramSchedule.NextWeek}
-          />
-          {nextWeekPrograms.length > 0 ? (
-            nextWeekPrograms.map((day) => (
-              <ProgramCardCollapsed
-                key={`nextWeek-${day.title}`}
-                title={day.title}
-              />
-            ))
-          ) : (
-            <Text style={styles.empty}>
-              No programs scheduled for next week.
-            </Text>
-          )}
+          <View style={styles.section}>
+            <SectionHeading title={"Today"} schedule={ProgramSchedule.Today} />
+            {todayPrograms.length > 0 ? (
+              todayPrograms.map((day) => (
+                <ProgramCard
+                  key={`today-${day.title}`}
+                  title={day.title}
+                  content={day.blocks}
+                  planType={day.type}
+                />
+              ))
+            ) : (
+              <Text style={styles.empty}>No programs scheduled for today.</Text>
+            )}
+            <View style={styles.section}></View>
+            <SectionHeading
+              title={"This Week"}
+              schedule={ProgramSchedule.ThisWeek}
+            />
+            {thisWeekPrograms.length > 0 ? (
+              thisWeekPrograms.map((day) => (
+                <ProgramCardCollapsed
+                  key={`thisWeek-${day.title}`}
+                  title={day.title}
+                />
+              ))
+            ) : (
+              <Text style={styles.empty}>
+                No programs scheduled for this week.
+              </Text>
+            )}
+          </View>
+          <View style={styles.section}>
+            <SectionHeading
+              title={"Next Week"}
+              schedule={ProgramSchedule.NextWeek}
+            />
+            {nextWeekPrograms.length > 0 ? (
+              nextWeekPrograms.map((day) => (
+                <ProgramCardCollapsed
+                  key={`nextWeek-${day.title}`}
+                  title={day.title}
+                />
+              ))
+            ) : (
+              <Text style={styles.empty}>
+                No programs scheduled for next week.
+              </Text>
+            )}
+          </View>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -294,6 +301,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#fff",
     fontFamily: "Quicksand_500Medium",
+  },
+  section: {
+    marginBottom: 30,
   },
 });
 
