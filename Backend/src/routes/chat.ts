@@ -306,22 +306,33 @@ async function createProgramFromIntent(
   parsed?: IntentParsed,
   P?: Profiler
 ): Promise<string | null> {
-  if (!isProgramCapable(agent)) return null;
+  if (!isProgramCapable(agent)) return null; // Only allow program-capable agents
 
-  const internalType = agentToProgramType(agent, "v1");
+  const internalType = agentToProgramType(agent, "v1"); // e.g. "training.v1"
+  const modality = (parsed?.modalities && parsed.modalities[0]) || "General";
   const recent = await supa
     .from("program")
-    .select("program_id, created_at, type, status")
+    .select("program_id, created_at, type, status, spec_json")
     .eq("user_id", userId)
     .eq("type", internalType)
+    .eq("spec_json->>modalities", modality) // Only match same modality
     .in("status", ["active", "scheduled"])
     .order("created_at", { ascending: false })
-    .limit(1);
+    .limit(1);                             // Only need the latest one
 
-  if (!recent.error && recent.data?.length) {
+  if (
+    !recent.error &&
+    recent.data?.length
+  ) {
     const last = recent.data[0];
     const createdMs = new Date(last.created_at).getTime();
-    if (Date.now() - createdMs < 120_000) {
+    // Only block if the raw_request matches exactly (case-insensitive, trimmed)
+    const lastRaw = (last.spec_json?.raw_request || "").trim().toLowerCase();
+    const thisRaw = (rawRequest || "").trim().toLowerCase();
+    if (
+      Date.now() - createdMs < 120_000 &&
+      lastRaw === thisRaw
+    ) {
       P?.mark?.("program_debounce_reuse", { program_id: last.program_id });
       return last.program_id as string;
     }

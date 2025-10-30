@@ -39,5 +39,5 @@ export function agentToProgramType(a: AgentType, version = "v1"): string {
 
 /** Which agents can generate programs today? (toggle as you build) */
 export function isProgramCapable(a: AgentType): boolean {
-  return true; // Allow all agent types including "other"
+  return a !== "other"; // Allow all agent types including "other"
 }
