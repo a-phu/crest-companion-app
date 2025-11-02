@@ -168,6 +168,8 @@ Guidance:
 
 - If the requested plan duration is less than 7 days, set should_create=false (do not create a program for less than a week), and do not generate a plan shorter than 7 days under any circumstances.
 
+- If the user requests a duration of 7 days or more (e.g., "2 weeks", "10 days", "1 month"), set should_create=true and use the requested duration.
+
 - Map physical training requests to "training", including:
   * bodyweight / calisthenics / street workout / gymnastics-style progressions
   * strength, hypertrophy, conditioning, running, cycling, rowing, swimming
