@@ -166,7 +166,7 @@ Guidance:
 
 - If vague or conversational, set should_create=false.
 
-- If the requested plan duration is less than 7 days, set should_create=false (do not create a program for less than a week).
+- If the requested plan duration is less than 7 days, set should_create=false (do not create a program for less than a week), and do not generate a plan shorter than 7 days under any circumstances.
 
 - Map physical training requests to "training", including:
   * bodyweight / calisthenics / street workout / gymnastics-style progressions
@@ -176,7 +176,9 @@ Guidance:
 - Map "meditation", "mindfulness", "relaxation", "breathing exercises" requests to "mind".
 - Otherwise "other".
 - Fill parsed fields when explicitly provided; otherwise set null.
-- If the user clearly asks for a plan/program but does not specify duration, default duration_weeks to 4 and set should_create=true.
+- If the user clearly asks for a plan/program but does not specify duration, default duration_weeks to 4 (28 days) and set should_create=true.
+- If the user specifies a start date (absolute or relative, e.g. "starting 3 days from now"), use that as the start_date, but do NOT treat it as a duration. The plan duration must still be at least 7 days (preferably 4 weeks) unless the user explicitly requests a longer duration.
+- Never generate a plan shorter than 7 days, even if the user requests it.
 - Fill parsed fields when explicitly provided; otherwise set null.
 
 Context note:

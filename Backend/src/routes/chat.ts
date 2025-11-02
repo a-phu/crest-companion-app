@@ -392,6 +392,7 @@ async function createProgramFromIntent(
       goals: null,
       constraints: null,
     },
+    start_date: startISO // <-- ensure this is passed!
   });
   const tGen1 = process.hrtime.bigint?.();
   if (tGen0 && tGen1) {
