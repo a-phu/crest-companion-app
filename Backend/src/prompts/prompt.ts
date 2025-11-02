@@ -176,6 +176,11 @@ Guidance:
 - Map "meditation", "mindfulness", "relaxation", "breathing exercises" requests to "mind".
 - Otherwise "other".
 - Fill parsed fields when explicitly provided; otherwise set null.
+- If the user clearly asks for a plan/program but does not specify duration, default duration_weeks to 4 and set should_create=true.
+- Fill parsed fields when explicitly provided; otherwise set null.
+
+Context note:
+When converting relative dates, "N days from now" means today plus N days (e.g., if today is the 2nd, "2 days from now" is the 4th).
 `;
 
 // Importance + agent classifier (strict JSON) used by the pipeline.

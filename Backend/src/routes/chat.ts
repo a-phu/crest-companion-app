@@ -340,11 +340,15 @@ async function createProgramFromIntent(
 
   const TODAY = new Date();
   const toISO = (d: Date) => d.toISOString().slice(0, 10);
-  let start = TODAY;
-  
+  // Use local date for today (not UTC)
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  let start = new Date(todayISO);
+
   if (parsed?.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
     const cand = new Date(parsed.start_date);
-    const diffDays = Math.round((cand.getTime() - TODAY.getTime()) / 86400000);
+    const diffDays = Math.round((cand.getTime() - start.getTime()) / 86400000);
     // widened window to make testing easier (backdate or schedule forward)
     if (diffDays >= -30 && diffDays <= 180) start = cand;
   }
@@ -353,7 +357,7 @@ async function createProgramFromIntent(
   console.log('DEBUG createProgramFromIntent:', {
     rawRequest,
     parsedStartDate: parsed?.start_date,
-    todayISO: toISO(TODAY),
+    todayISO,
     finalStartISO: toISO(start),
     agent
   });
